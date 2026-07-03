@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-03T19:57:56Z",
+  "as_of": "2026-07-03T20:01:24Z",
   "country": "US",
   "composite": 4.534,
   "band": [
@@ -18,20 +18,20 @@
     "external_order": 0.55
   },
   "readings": {
-    "five_wars_composite": 0.63,
-    "bloc_alignment": 0.6,
-    "institutional_trust": 20.0,
-    "populist_vote_share": 35.0,
-    "foreign_treasury_share": 0.0237,
-    "income_gini": 0.418,
-    "interest_pct_revenue": 33.4374,
-    "top1_wealth_share": 31.6,
-    "total_nonfin_debt_gdp": 255.0,
+    "gov_debt_gdp": 122.5939,
     "policy_room": 3.63,
     "political_polarization": 0.9,
     "rival_power_gap": 0.12,
     "cb_balance_sheet_gdp": 21.1028,
     "reserve_currency_share": 58.0,
-    "gov_debt_gdp": 122.5939
+    "income_gini": 0.418,
+    "interest_pct_revenue": 33.4374,
+    "top1_wealth_share": 31.6,
+    "total_nonfin_debt_gdp": 255.0,
+    "bloc_alignment": 0.6,
+    "institutional_trust": 20.0,
+    "populist_vote_share": 35.0,
+    "five_wars_composite": 0.63,
+    "foreign_treasury_share": 0.0237
   }
 }
