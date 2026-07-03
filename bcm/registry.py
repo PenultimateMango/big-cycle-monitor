@@ -31,12 +31,29 @@ INDICATORS: dict[str, Spec] = {
     "policy_room":          Spec("fred", ["DFF"], 1.0, "policy rate %"),
     "top1_wealth_share":    Spec("fred", ["WFRBST01134"], 1.0, "% of net worth"),
     "income_gini":          Spec("fred", ["SIPOVGINIUSA"], 0.01, "Gini 0..1"),
+    # --- RATIO INDICATORS: two traps to check whenever you swap a series ---
+    #   (1) units    — one series in $millions, another in $billions => 1000x error
+    #   (2) stock vs flow — a STOCK (a level, e.g. debt outstanding) is the full
+    #                       amount at a point in time (a quarterly obs is NOT 1/4).
+    #                       a FLOW (per-period, e.g. interest paid) only divides
+    #                       cleanly against another flow on the SAME basis. FRED
+    #                       flows are often "seasonally adjusted annual rate", so
+    #                       flow/flow is safe when BOTH are annualized (it cancels).
+    #
+    # interest_pct_revenue: FLOW / FLOW. Both are seas.-adj. ANNUAL RATE ($B), so the
+    #   annualization cancels -> ~18-20%. scale 100 = percent.
     "interest_pct_revenue": Spec("fred_ratio", ["A091RC1Q027SBEA", "W006RC1Q027SBEA"], 100.0, "% fed revenue"),
+    # cb_balance_sheet_gdp: STOCK / FLOW by design (like debt/GDP). WALCL is a stock
+    #   ($millions); GDP is annualized flow ($billions). 0.1 scale bridges M vs B.
     "cb_balance_sheet_gdp": Spec("fred_ratio", ["WALCL", "GDP"], 0.1, "% of GDP"),
-    # foreign-held share of the debt, straight from two FRED series
-    "foreign_treasury_share": Spec("fred_ratio", ["FDHBFIN", "GFDEBTN"], 100.0, "%"),
+    # foreign_treasury_share: STOCK / STOCK -> magnitude-safe. FDHBFIN is $billions
+    #   (quarterly), FYGFDPUN is $millions (annual) -> x100000 for M-vs-B + percent.
+    #   Numerator quarterly, denominator annual: a small TIMING drift, not a scale bug.
+    #   Share of debt HELD BY THE PUBLIC (excl. intragov't) — the market-demand basis. ~30%.
+    "foreign_treasury_share": Spec("fred_ratio", ["FDHBFIN", "FYGFDPUN"], 100000.0, "%"),
 
     # ---- AUTO: World Bank (SIPRI-sourced military expenditure, USD) --------
+    # military_balance: FLOW / FLOW, both annual mil-spend in current USD -> safe.
     "military_balance":     Spec("wb_ratio", ["CHN/MS.MIL.XPND.CD", "USA/MS.MIL.XPND.CD"], 100.0, "%"),
 
     # ---- AUTO: GDELT real-time tone proxies -------------------------------

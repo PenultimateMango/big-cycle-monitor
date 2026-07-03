@@ -71,8 +71,8 @@ policy_room:
 foreign_treasury_share:
   label: "Foreign-held debt share"
   suffix: "%"
-  definition: "Share of Treasuries held by foreign investors. A declining trend signals waning external confidence in the debt — an early warning on the road to reserve-status loss."
-  source: "U.S. Treasury (FRED: FDHBFIN / GFDEBTN)"
+  definition: "Share of publicly-held federal debt owned by foreign investors. A declining trend signals waning external confidence in the debt — an early warning on the road to reserve-status loss."
+  source: "FRED: FDHBFIN / FYGFDPUN (foreign share of debt held by the public)"
 
 reserve_currency_share:
   label: "Reserve currency share"

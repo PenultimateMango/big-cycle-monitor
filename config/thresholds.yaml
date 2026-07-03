@@ -141,10 +141,10 @@ debt_money:
 
     foreign_treasury_share:   # DECLINING foreign demand = LATER (anchors fall)
       home: debt_money
-      source: US Treasury TIC
-      unit: "% of marketable Treasuries held abroad"
+      source: "FRED: FDHBFIN / FYGFDPUN"
+      unit: "% of debt held by the public that is foreign-held"
       weight: 0.10
-      current_reading: 30
+      current_reading: 30        # ~peaked at 34% (mid-2010s), now ~30% and falling
       anchors: [[20, 5.6], [28, 4.8], [33, 4.0], [40, 3.0], [50, 2.0]]
 
     reserve_currency_share:   # SHARED — see shared_indicators. Single home = debt_money.
