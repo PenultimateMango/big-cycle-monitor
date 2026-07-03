@@ -1,32 +1,38 @@
 {
-  "as_of": "2026-07-03T16:01:46Z",
+  "as_of": "2026-07-03T16:56:20Z",
   "country": "US",
-  "composite": 4.414,
+  "composite": 4.445,
   "band": [
-    3.961,
-    4.866
+    3.804,
+    5.086
   ],
-  "widening_pct": 40.8,
+  "widening_pct": 38.1,
   "gauges": {
-    "internal_order": 4.909,
-    "debt_money": 4.103,
+    "internal_order": 4.606,
+    "debt_money": 4.538,
     "external_order": 4.057
   },
   "sigmas": {
-    "internal_order": 0.501,
-    "debt_money": 0.6,
+    "internal_order": 0.749,
+    "debt_money": 0.932,
     "external_order": 0.55
   },
   "readings": {
-    "institutional_trust": 20.0,
-    "populist_vote_share": 35.0,
+    "cb_balance_sheet_gdp": 21.1028,
     "five_wars_composite": 0.63,
     "reserve_currency_share": 58.0,
+    "gov_debt_gdp": 122.5939,
+    "income_gini": 0.418,
+    "interest_pct_revenue": 33.4374,
+    "top1_wealth_share": 31.6,
+    "total_nonfin_debt_gdp": 255.0,
+    "institutional_trust": 20.0,
+    "populist_vote_share": 35.0,
     "foreign_treasury_share": 30.0,
     "military_balance": 33.0,
     "unrest_events": 55.0,
-    "total_nonfin_debt_gdp": 255.0,
     "bloc_alignment": 0.6,
+    "policy_room": 3.63,
     "political_polarization": 0.9,
     "rival_power_gap": 0.12
   }
