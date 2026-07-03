@@ -168,6 +168,13 @@ def render_history_section(histories: dict[str, list], cfg: dict, meta: dict) ->
             m = meta.get(name, {})
             cards += render_chart(histories.get(name, []), m.get("label", name),
                                   m.get("suffix", ""), _anchors_for(cfg, name))
+            # a derived composite's sub-gauges chart right after it, on the
+            # parent's anchors (same 0..1 escalation scale)
+            for sub in (ind.get("sub_gauges") or {}):
+                if sub in histories:
+                    sm = meta.get(sub, {})
+                    cards += render_chart(histories[sub], sm.get("label", sub),
+                                          sm.get("suffix", ""), ind.get("anchors"))
         blocks += (f'<div class="bcm-hist-cycle"><div class="bcm-hist-h">{cfg[c]["label"]}</div>'
                    f'<div class="bcm-hist-grid">{cards}</div></div>')
     return (f'<div class="bcm-history"><div class="bcm-hist-title">Indicator history'

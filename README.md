@@ -135,6 +135,20 @@ the tint deepens toward Stage-6 territory, so "when did this metric cross into
 Stage 5" is readable at a glance (bands sit at the top for rising-is-later
 indicators like debt, at the bottom for falling-is-later ones like trust).
 
+Two structural additions:
+* **`media_trust`** — Gallup's mass-media trust series (same question since
+  1972; 72% then, 28% now), Dalio's loss-of-shared-truth Stage-5 marker, scored
+  in `internal_order`. Ships pre-seeded in `data/manual/media_trust.csv`;
+  append one row each September when Gallup publishes.
+* **Five-wars split** — `five_wars_composite` is now DERIVED: the mean of five
+  first-class manual series (`trade_war.csv`, `technology_war.csv`,
+  `capital_war.csv`, `geopolitical_war.csv`, `military_war.csv`). Update the
+  sub-war you've re-rated; the composite and its history recompute. Only the
+  composite is scored (no quintuple-counting), but all five chart individually,
+  so divergence between fronts — tech war raging while military stays cool —
+  is visible instead of averaged away. `five_wars_composite.csv` is obsolete
+  and no longer read.
+
 Where history comes from:
 * **FRED / World Bank indicators** — `python scripts/run.py backfill` pulls the
   full published series (decades) in one call per indicator. The CI workflow

@@ -109,3 +109,39 @@ bloc_alignment:
   suffix: ""
   definition: "How sharply the world is splitting into rival alliances, scaled 0–1. Rising alignment into opposing blocs is a precondition for the systemic conflict that resets a world order."
   source: "Derived from GDELT alliance/influence signals"
+
+media_trust:
+  label: "Trust in mass media"
+  suffix: "%"
+  definition: "Share of Americans with a great deal or fair amount of trust in newspapers, TV, and radio to report the news fully, accurately, and fairly — Gallup's unchanged question since 1972 (72% then, 28% now). Dalio flags the loss of shared truth in public discourse as a hallmark of Stage 5: when large factions assign zero credibility to the information system, disputes stop being resolvable with facts."
+  source: "Gallup, annual September poll (news.gallup.com/topic/media.aspx)"
+
+trade_war:
+  label: "· Trade war"
+  suffix: ""
+  definition: "Intensity of tariff, quota, and trade-restriction conflict between the leading power and its rival, 0–1. The first and mildest rung of Dalio's five-front escalation ladder."
+  source: "Global Trade Alert (globaltradealert.org); judgment-scaled"
+
+technology_war:
+  label: "· Technology war"
+  suffix: ""
+  definition: "Intensity of the fight over technological supremacy — export controls, entity lists, chip and standards restrictions — 0–1. Dalio ranks tech dominance as the most decisive front short of shooting."
+  source: "US BIS Entity List / export-control trackers; judgment-scaled"
+
+capital_war:
+  label: "· Capital war"
+  suffix: ""
+  definition: "Intensity of financial-front conflict — sanctions, asset freezes, delistings, payment-system exclusion — 0–1. The rung where money itself becomes the weapon."
+  source: "OFAC sanctions programs (ofac.treasury.gov); judgment-scaled"
+
+geopolitical_war:
+  label: "· Geopolitical war"
+  suffix: ""
+  definition: "Intensity of influence competition — alliance-building, proxy pressure, territorial brinkmanship — 0–1. The rung just below direct confrontation."
+  source: "GDELT alliance/influence signals; judgment-scaled"
+
+military_war:
+  label: "· Military war"
+  suffix: ""
+  definition: "Intensity of direct or proxy armed conflict between the powers, 0–1. The final rung; Dalio's history says the prior four fronts usually escalate before this one fires."
+  source: "ACLED (acleddata.com); direct-vs-proxy judgment"

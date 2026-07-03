@@ -28,17 +28,27 @@ def main():
 
     MANUAL.mkdir(parents=True, exist_ok=True)
     made = 0
+    # collect sub_gauges seeds (derived composites' per-war values)
+    sub_seeds = {}
+    for c in CYCLES:
+        for _n, ind in cfg[c]["indicators"].items():
+            for sub, spec_ in (ind.get("sub_gauges") or {}).items():
+                sub_seeds[sub] = spec_.get("value", "")
+
     for name, spec in INDICATORS.items():
-        if spec.kind != "csv":
+        if spec.kind not in ("csv", "csv_mean"):
             continue
-        path = MANUAL / spec.series[0]
-        if path.exists():
-            continue
-        with open(path, "w", newline="") as f:
-            w = csv.writer(f)
-            w.writerow(["date", "value"])
-            w.writerow([date.today().isoformat(), readings.get(name, "")])
-        made += 1
+        for fname in spec.series:
+            path = MANUAL / fname
+            if path.exists():
+                continue
+            stem = fname.rsplit(".", 1)[0]
+            val = readings.get(name, "") if spec.kind == "csv" else sub_seeds.get(stem, "")
+            with open(path, "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(["date", "value"])
+                w.writerow([date.today().isoformat(), val])
+            made += 1
     print(f"created {made} manual CSV templates in {MANUAL}")
 
 

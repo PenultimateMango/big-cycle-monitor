@@ -46,6 +46,21 @@ def refresh(store: Store, country: str = "US", manual_dir=None, verbose: bool = 
                 d, v = gdelt.series(spec.series[0]); val = v * spec.scale
             elif spec.kind == "csv":
                 d, v = csvs.series(spec.series[0]); val = v * spec.scale
+            elif spec.kind == "csv_mean":
+                # derived composite: mean of each sub-CSV's latest value. Each
+                # sub-series is ALSO stored under its own name (stem of the
+                # filename) so it gets charted individually.
+                subs = []
+                for f in spec.series:
+                    sd, sv = csvs.series(f)
+                    sub_name = f.rsplit(".", 1)[0]
+                    store.upsert(Observation(sub_name, sv, sd, "csv", f, spec.unit),
+                                 country=country)
+                    subs.append((sd, sv))
+                if len(subs) < len(spec.series):
+                    raise ValueError(f"only {len(subs)}/{len(spec.series)} sub-series present")
+                val = sum(v for _, v in subs) / len(subs) * spec.scale
+                d = max(sd for sd, _ in subs)
             else:
                 status[name] = f"unknown kind {spec.kind}"; continue
 
@@ -86,6 +101,27 @@ def _align_ratio(num: list, den: list, scale: float, tol_days: int = 400) -> lis
     return out
 
 
+def _ffill_mean(series_list: list[list]) -> list:
+    """Composite history from N sub-series: at every date in the union (from the
+    point all N have started), carry each series' last value forward and average.
+    This is how a judgment composite honestly evolves — a sub-war re-rating moves
+    the composite from that date on, without inventing data between ratings."""
+    if not series_list or any(not s for s in series_list):
+        return []
+    all_dates = sorted({d for s in series_list for d, _ in s})
+    start = max(s[0][0] for s in series_list)      # composite defined once all exist
+    idx = [0] * len(series_list)
+    last = [s[0][1] for s in series_list]
+    out = []
+    for d in all_dates:
+        for k, s in enumerate(series_list):
+            while idx[k] < len(s) and s[idx[k]][0] <= d:
+                last[k] = s[idx[k]][1]; idx[k] += 1
+        if d >= start:
+            out.append((d, sum(last) / len(last)))
+    return out
+
+
 def backfill(store: Store, country: str = "US", manual_dir=None, verbose: bool = True) -> dict[str, str]:
     """Load FULL history for every indicator that has one — decades of FRED /
     World Bank data plus all manual CSV rows — so time-series charts are dense
@@ -113,6 +149,15 @@ def backfill(store: Store, country: str = "US", manual_dir=None, verbose: bool =
                                     wb.history(spec.series[1]), spec.scale)
             elif spec.kind == "csv":
                 rows = [(d, v * spec.scale) for d, v in csvs.history(spec.series[0])]
+            elif spec.kind == "csv_mean":
+                subs = []
+                for f in spec.series:
+                    sub_rows = csvs.history(f)
+                    sub_name = f.rsplit(".", 1)[0]
+                    store.insert_many(sub_name, sub_rows, "csv", f, spec.unit,
+                                      country=country)
+                    subs.append(sub_rows)
+                rows = [(d, v * spec.scale) for d, v in _ffill_mean(subs)]
             else:                               # gdelt & friends: no history API
                 status[name] = "skip (no history endpoint)"; continue
             n = store.insert_many(name, rows, spec.kind.split("_")[0],

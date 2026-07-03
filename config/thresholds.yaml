@@ -45,7 +45,7 @@ internal_order:
       home: internal_order
       source: WID.world | Fed Distributional Financial Accounts
       unit: "% of national wealth held by top 1%"
-      weight: 0.18
+      weight: 0.17
       current_reading: 31
       anchors: [[20, 2.5], [25, 3.3], [30, 4.2], [33, 4.8], [38, 5.6], [45, 6.0]]
 
@@ -53,7 +53,7 @@ internal_order:
       home: internal_order
       source: US Census (CPS/ACS)
       unit: "Gini coefficient 0..1"
-      weight: 0.12
+      weight: 0.11
       current_reading: 0.48
       anchors: [[0.35, 2.0], [0.42, 3.0], [0.46, 4.0], [0.49, 4.8], [0.55, 6.0]]
 
@@ -61,7 +61,7 @@ internal_order:
       home: internal_order
       source: Voteview DW-NOMINATE (party-mean distance, normalized 0..1)
       unit: "normalized 0..1"
-      weight: 0.22
+      weight: 0.20
       current_reading: 0.90
       anchors: [[0.30, 2.0], [0.50, 3.0], [0.70, 4.2], [0.85, 5.2], [1.00, 6.0]]
 
@@ -69,15 +69,29 @@ internal_order:
       home: internal_order
       source: Pew | Gallup
       unit: "% who trust govt to do right most of the time"
-      weight: 0.15
+      weight: 0.12
       current_reading: 20
       anchors: [[10, 6.0], [15, 5.8], [22, 5.0], [30, 4.0], [40, 3.0], [55, 2.0]]
+
+    media_trust:              # LOWER trust = LATER stage (anchors fall)
+      # Dalio's "loss of truth in public discourse" Stage-5 marker, measured
+      # directly: Gallup has asked the same question since 1972 — trust in mass
+      # media "to report the news fully, accurately and fairly". 72% in 1976,
+      # 53% in 1997, 32% in 2016, 28% in 2025 (record low). Correlates with
+      # institutional_trust (both are the trust cluster, jointly capped at
+      # 0.22 weight); the correlation matrix absorbs the shared component.
+      home: internal_order
+      source: Gallup annual (Sept) — news.gallup.com/topic/media.aspx
+      unit: "% great deal / fair amount of trust in mass media"
+      weight: 0.10
+      current_reading: 28
+      anchors: [[15, 6.0], [28, 5.3], [32, 5.0], [40, 4.0], [53, 3.0], [72, 2.0]]
 
     populist_vote_share:
       home: internal_order
       source: curated election data (left + right populist vote)
       unit: "% combined populist vote"
-      weight: 0.15
+      weight: 0.14
       current_reading: 35
       anchors: [[10, 2.0], [20, 3.0], [30, 4.0], [40, 5.0], [55, 6.0]]
 
@@ -85,7 +99,7 @@ internal_order:
       home: internal_order
       source: ACLED (US Crisis Monitor) | GDELT (normalized 0..100)
       unit: "normalized intensity 0..100"
-      weight: 0.18
+      weight: 0.16
       current_reading: 55
       anchors: [[20, 2.5], [40, 3.5], [55, 4.3], [70, 5.2], [90, 6.0]]
   # -> gauge ≈ 4.7  (hottest of the three; consistent with Dalio's ordering)
@@ -191,13 +205,19 @@ external_order:
       anchors: [[20, 2.0], [40, 3.0], [55, 3.8], [70, 4.6], [85, 5.4], [100, 6.0]]
 
     five_wars_composite:      # Dalio's escalation ladder — mean of 5 sub-gauges (0..1)
+      # DERIVED: the pipeline computes this as the mean of five first-class
+      # manual series (data/manual/{trade,technology,capital,geopolitical,
+      # military}_war.csv). Only the COMPOSITE is scored — the sub-wars are
+      # charted individually but don't enter the gauge separately, so
+      # external_order isn't quintuple-counting one concept. The sub_gauges
+      # values below are the seed rows init_manual.py writes on first run.
       home: external_order
-      source: derived (see sub_gauges)
+      source: derived — mean of the 5 sub-war CSVs (see sub_gauges)
       unit: "mean of 5 war-type intensities 0..1"
       weight: 0.25
       current_reading: 0.63
       anchors: [[0.20, 2.0], [0.40, 3.0], [0.55, 3.8], [0.70, 4.6], [0.85, 5.4], [1.00, 6.0]]
-      sub_gauges:             # display + adjustable; averaged into current_reading
+      sub_gauges:             # seeds for the per-war CSVs; charted individually
         trade_war:        {value: 0.70, source: Global Trade Alert}
         technology_war:   {value: 0.80, source: export-control / entity-list trackers}
         capital_war:      {value: 0.60, source: OFAC sanctions | asset-freeze counts}
@@ -292,6 +312,7 @@ country_overrides:
         income_gini:            {current_reading: 0.47}
         political_polarization: {current_reading: 0.20}   # CAVEAT: one-party state — electoral polarization is near-undefined here
         institutional_trust:    {current_reading: 82}     # CAVEAT: reported trust under censorship is not comparable to a democracy's
+        media_trust:            {current_reading: 65}     # CAVEAT: state media under censorship — same comparability problem as trust
         populist_vote_share:    {applicable: false}       # no competitive elections
         unrest_events:          {current_reading: 30}     # CAVEAT: censored/underreported
     debt_money:

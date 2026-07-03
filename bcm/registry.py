@@ -6,6 +6,8 @@ kinds:
   wb_ratio      value = worldbank(s0) / worldbank(s1) * scale
   gdelt         value = series(s0)                (query string -> 0..100 stress)
   csv           value = latest row of data/manual/<file> * scale   (no network)
+  csv_mean      value = mean of the latest rows of N CSVs (each sub-series is
+                also stored/charted under its own name)   (no network)
 
 AUTOMATION STATUS (see README for the full table):
   auto      FRED, World Bank, GDELT, FRED-ratios — real endpoints, run on the cron
@@ -64,12 +66,18 @@ INDICATORS: dict[str, Spec] = {
     "total_nonfin_debt_gdp":  Spec("csv", ["total_nonfin_debt_gdp.csv"], 1.0, "% of GDP", "BIS credit-to-non-financial-sector (quarterly download)"),
     "reserve_currency_share": Spec("csv", ["reserve_currency_share.csv"], 1.0, "%", "IMF COFER (quarterly; SDMX API automatable — verify series key)"),
     "institutional_trust":    Spec("csv", ["institutional_trust.csv"], 1.0, "%", "Pew (no API; OECD trust is an automatable swap)"),
+    "media_trust":            Spec("csv", ["media_trust.csv"], 1.0, "%", "Gallup mass-media trust, annual Sept (ships pre-seeded with the 1972-2025 series)"),
     "political_polarization": Spec("csv", ["political_polarization.csv"], 1.0, "0..1", "Voteview DW-NOMINATE (yearly; scriptable download + compute)"),
 
     # ---- MANUAL: inherently curated / judgment ----------------------------
     "populist_vote_share":  Spec("csv", ["populist_vote_share.csv"], 1.0, "%", "per-election; curated"),
     "rival_power_gap":      Spec("csv", ["rival_power_gap.csv"], 1.0, "0..1", "output of your own power model"),
-    "five_wars_composite":  Spec("csv", ["five_wars_composite.csv"], 1.0, "0..1", "Dalio escalation ladder; judgment composite"),
+    # five_wars_composite is DERIVED: mean of the five sub-war CSVs. Each sub-war
+    # is stored + charted under its own name; only the composite is scored.
+    "five_wars_composite":  Spec("csv_mean",
+                                 ["trade_war.csv", "technology_war.csv", "capital_war.csv",
+                                  "geopolitical_war.csv", "military_war.csv"],
+                                 1.0, "0..1", "Dalio escalation ladder; mean of 5 judgment sub-gauges"),
     "bloc_alignment":       Spec("csv", ["bloc_alignment.csv"], 1.0, "0..1", "alliance clustering; judgment"),
 }
 
@@ -87,7 +95,7 @@ _ISO2 = {"US": "US", "CHN": "CN", "RUS": "RU", "IND": "IN", "JPN": "JP",
 _CSV_ONLY = (
     "top1_wealth_share", "total_nonfin_debt_gdp", "interest_pct_revenue",
     "cb_balance_sheet_gdp", "policy_room", "foreign_treasury_share",
-    "political_polarization", "institutional_trust", "populist_vote_share",
+    "political_polarization", "institutional_trust", "media_trust", "populist_vote_share",
     "rival_power_gap", "five_wars_composite", "bloc_alignment",
 )
 
