@@ -273,19 +273,49 @@ composite:
 #                                    of member states, or treat as a bloc (Dalio treats
 #                                    the Eurozone as a single unit).
 # =============================================================================
+# Display names for the dashboard title.
+country_meta:
+  US: United States
+  CHN: China
+
+# Per-country overrides. resolve_country() deep-merges these onto the US base,
+# so a profile supplies only what differs: current_reading for each indicator,
+# plus anchors / applicability where the context demands. Non-overridden fields
+# (weights, labels, most anchors) inherit from the US profile above.
 country_overrides:
-  CHN:                      # STUB — illustrative pattern only, not calibrated
+
+  CHN:                       # illustrative & grounded (Dalio 2022 figures + general knowledge)
     meta: {country: CHN}
+    internal_order:
+      indicators:
+        top1_wealth_share:      {current_reading: 31}
+        income_gini:            {current_reading: 0.47}
+        political_polarization: {current_reading: 0.20}   # CAVEAT: one-party state — electoral polarization is near-undefined here
+        institutional_trust:    {current_reading: 82}     # CAVEAT: reported trust under censorship is not comparable to a democracy's
+        populist_vote_share:    {applicable: false}       # no competitive elections
+        unrest_events:          {current_reading: 30}     # CAVEAT: censored/underreported
     debt_money:
       indicators:
-        reserve_currency_share: {applicable: false}   # weight redistributes
-        debt_in_own_currency:
+        gov_debt_gdp:           {current_reading: 60}     # official central govt; broad govt incl LGFVs is higher
+        total_nonfin_debt_gdp:  {current_reading: 285}    # high private + corporate leverage
+        interest_pct_revenue:   {current_reading: 12}
+        cb_balance_sheet_gdp:   {current_reading: 30}
+        policy_room:            {current_reading: 3.0}    # room to cut
+        foreign_treasury_share: {applicable: false}       # negligible foreign holding of CGBs
+        reserve_currency_share: {applicable: false}       # RMB ~2-3% of reserves, not reserve status
+        debt_in_own_currency:                             # mitigant that doesn't exist in the US profile
           home: debt_money
-          source: BIS | PBoC
-          unit: "% of total debt denominated in own currency"
+          source: "BIS | PBoC"
+          unit: "% of total debt in own currency"
           weight: 0.10
+          current_reading: 97
           anchors: [[70, 5.5], [85, 4.5], [95, 3.5], [99, 2.5]]
     external_order:
       indicators:
-        rival_power_gap:    # rising power: a NEGATIVE gap vs leader = ascendant, earlier-stage externally
+        rival_power_gap:                                  # rising power: a NEGATIVE gap vs the hegemon = ascendant, earlier-stage
+          current_reading: -0.12
           anchors: [[-0.20, 2.0], [-0.10, 2.8], [0.00, 3.6], [0.12, 4.4], [0.30, 5.4]]
+        military_balance:       {current_reading: 33}     # China spend as % of US (reframed vs the hegemon)
+        conflict_intensity:     {current_reading: 78}     # global gauge — same worldwide
+        five_wars_composite:    {current_reading: 0.60}
+        bloc_alignment:         {current_reading: 0.60}

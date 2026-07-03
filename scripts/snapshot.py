@@ -15,16 +15,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from bcm import scoring
-from bcm.arc import page, render_arc
+from bcm.panels import dashboard_page, load_meta
 from bcm.store import Store
 
 
 def main():
-    cfg = scoring.load_config(ROOT / "config" / "thresholds.yaml")
-    readings = Store(ROOT / "data" / "bcm.duckdb").latest_values()
+    country = sys.argv[1] if len(sys.argv) > 1 else "US"
+    cfg = scoring.resolve_country(scoring.load_config(ROOT / "config" / "thresholds.yaml"), country)
+    readings = Store(ROOT / "data" / "bcm.duckdb").latest_values(country=country)
     res = scoring.run(cfg, readings)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    country = cfg["meta"]["country"]
     lo, hi = res["band"]
 
     # 1) full snapshot
@@ -52,10 +52,13 @@ def main():
                     f"{res['gauges']['debt_money']:.3f}",
                     f"{res['gauges']['external_order']:.3f}"])
 
-    # 3) rendered arc for GitHub Pages
+    # 3) full dashboard (arc + labeled panels + About) for GitHub Pages
     docs = ROOT / "docs"
     docs.mkdir(exist_ok=True)
-    (docs / "index.html").write_text(page(render_arc(res, cfg), res))
+    meta = load_meta(ROOT / "config" / "indicator_meta.yaml")
+    (docs / f"{country}.html").write_text(dashboard_page(res, readings, cfg, meta))
+    if country == "US":
+        (docs / "index.html").write_text(dashboard_page(res, readings, cfg, meta))
 
     print(f"snapshot {country} composite={res['composite']:.2f} band=[{lo:.2f},{hi:.2f}] @ {now}")
 

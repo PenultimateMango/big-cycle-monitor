@@ -14,6 +14,28 @@ def load_config(path: str | Path = "config/thresholds.yaml") -> dict:
     return yaml.safe_load(open(path))
 
 
+def resolve_country(cfg: dict, country: str) -> dict:
+    """Deep-merge a country_overrides[country] profile onto the US base and return
+    a self-contained cfg for that country. The US base supplies weights, labels,
+    and any anchors the profile doesn't override; the profile supplies each
+    indicator's current_reading plus anchors/applicability where they differ."""
+    import copy
+    base = copy.deepcopy(cfg)
+    base_country = cfg.get("meta", {}).get("country", "US")
+    if country != base_country:
+        prof = (cfg.get("country_overrides") or {}).get(country)
+        if not prof:
+            raise ValueError(f"no profile for {country}; add one under country_overrides")
+        base["meta"]["country"] = country
+        for cyc in CYCLES:
+            for name, patch in (prof.get(cyc, {}).get("indicators", {})).items():
+                tgt = base[cyc]["indicators"].setdefault(name, {})
+                tgt.update(patch)
+    base.pop("country_overrides", None)
+    base["_name"] = (cfg.get("country_meta") or {}).get(country, country)
+    return base
+
+
 def score_indicator(value: float, anchors: list) -> float:
     pts = sorted(anchors, key=lambda p: p[0])
     xs = np.array([p[0] for p in pts], float)

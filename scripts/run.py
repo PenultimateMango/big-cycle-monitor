@@ -19,7 +19,7 @@ DB = str(Path(__file__).resolve().parents[1] / "data" / "bcm.duckdb")
 
 def _report(cfg, readings):
     res = scoring.run(cfg, readings)
-    print(f"\nBIG CYCLE MONITOR — {cfg['meta']['country']}\n" + "-" * 52)
+    print(f"\nBIG CYCLE MONITOR — {cfg.get('_name', cfg['meta']['country'])}\n" + "-" * 52)
     for c in scoring.CYCLES:
         print(f"{cfg[c]['label']:<28} stage {res['gauges'][c]:4.2f}   sigma {res['sigmas'][c]:.2f}")
         print(f"    {res['details'][c]}")
@@ -33,19 +33,20 @@ def _report(cfg, readings):
 
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "demo"
-    cfg = scoring.load_config(CONFIG)
+    country = sys.argv[2] if len(sys.argv) > 2 else "US"
+    cfg = scoring.resolve_country(scoring.load_config(CONFIG), country)
     store = Store(DB)
 
     if cmd == "demo":
-        n = seed_mod.seed(cfg, store)
-        print(f"seeded {n} indicators (offline)")
-        _report(cfg, store.latest_values())
+        n = seed_mod.seed(cfg, store, country=country)
+        print(f"seeded {n} indicators for {country} (offline)")
+        _report(cfg, store.latest_values(country=country))
     elif cmd == "refresh":
-        print("refreshing live sources...")
-        pipeline.refresh(store)
-        _report(cfg, store.latest_values())
+        print(f"refreshing live sources for {country}...")
+        pipeline.refresh(store, country=country)
+        _report(cfg, store.latest_values(country=country))
     elif cmd == "score":
-        _report(cfg, store.latest_values())
+        _report(cfg, store.latest_values(country=country))
     else:
         print(__doc__)
     store.close()

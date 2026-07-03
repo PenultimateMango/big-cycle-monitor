@@ -53,28 +53,70 @@ data/
 
 ## What automates vs what's manual
 
-Only ~6 indicators pull cleanly from FRED today (debt/GDP, interest/revenue,
-Fed balance sheet, policy rate, top-1% wealth, Gini). Conflict tone comes from
-GDELT. The rest — reserve share (IMF COFER), polarization (DW-NOMINATE), trust
-(Pew), SIPRI military balance, populist vote, unrest (ACLED) — need specialized
-loaders or manual updates and are marked `manual` in `registry.py`. That split is
-deliberate and honest: the geopolitical/social signals don't have clean public
-APIs. Add them as dedicated `Source` subclasses over time.
+Every indicator with a real public endpoint is automated and runs on the cron.
+The rest have no clean public API or are inherently curated — automating them
+would mean fabricating a feed, so they stay CSV files you append to.
 
-To go live:
-1. `export FRED_API_KEY=...` (free: https://fred.stlouisfed.org/docs/api/api_key.html)
-2. `python scripts/run.py refresh`
-3. Wire manual indicators via CSV loaders or a small admin step.
-4. Schedule `refresh` on mixed cadences (GitHub Actions cron per source).
+| Indicator | Status | Source |
+|-----------|--------|--------|
+| gov_debt_gdp, policy_room, top1_wealth_share, income_gini | auto | FRED |
+| interest_pct_revenue, cb_balance_sheet_gdp | auto | FRED (ratio) |
+| foreign_treasury_share | auto | FRED (FDHBFIN / GFDEBTN) |
+| military_balance | auto | World Bank (SIPRI mil-exp, CHN/USA) |
+| conflict_intensity, unrest_events | auto | GDELT tone proxy |
+| total_nonfin_debt_gdp | manual | BIS — quarterly download |
+| reserve_currency_share | manual | IMF COFER — SDMX automatable, verify key |
+| political_polarization | manual | Voteview — yearly, scriptable |
+| institutional_trust | manual | Pew (no API; OECD is a swap option) |
+| populist_vote_share | manual | per-election, curated |
+| rival_power_gap | manual | output of your own power model |
+| five_wars_composite, bloc_alignment | manual | Dalio judgment composites |
 
-## Adding a country
+The GDELT proxies (conflict, unrest) are tone-based and rough — fine as a live
+signal, worth upgrading to the GDELT Events table (Goldstein scores) via BigQuery
+later. To go live: `export FRED_API_KEY=...` then `python scripts/run.py refresh`.
+World Bank and GDELT need no key. Manual indicators keep their last CSV value.
 
-Everything is US-first but country-ready. Add a block under `country_overrides`
-in `thresholds.yaml` (see the `CHN` stub) overriding only what differs — reserve
-applicability, FX-denominated debt, anchor shifts, source swaps, `rival_power_gap`
-sign for a rising power. The store already partitions by `country`; scoring and
-composite math are country-agnostic. Regions (Europe, Africa, S. America) can be
-GDP-weighted composites of member states, the way Dalio treats the Eurozone.
+## Adding a country or region
+
+The machinery is country-first: the store partitions by `country`, scoring is
+country-agnostic, and `resolve_country()` deep-merges a profile onto the US base.
+A worked example ships — run `python scripts/run.py demo CHN` and China lands at
+composite ~3.5 (ascending) vs the US ~4.5 (late), through the merge, not hardcoding.
+
+**Steps to add one (e.g. India):**
+1. Add a display name under `country_meta:` in `thresholds.yaml` (`IND: India`).
+2. Add an `IND:` block under `country_overrides:` with a `current_reading` for each
+   indicator, plus `anchors`/`applicable: false` where the context differs (drop
+   reserve status, add `debt_in_own_currency`, flip `rival_power_gap` for a riser).
+3. `python scripts/run.py demo IND` to score it offline.
+4. For live data, `indicators_for("IND")` already routes to the World Bank profile;
+   populate `data/manual/IND/*.csv` for the indicators without a public API.
+
+**Be honest about the difficulty tiers — they are not equal:**
+
+- *Ports cleanly:* the debt cycle and parts of the external cycle. World Bank
+  (change the ISO3), BIS, and IMF cover debt/GDP, military spend, and Gini for
+  most countries.
+- *Needs re-sourcing:* the internal-order cycle. Its US indicators (DW-NOMINATE,
+  Pew, Fed DFA) have no global twins — swap to cross-national datasets: WID.world
+  (inequality, all countries), V-Dem (polarization, trust), ACLED (unrest).
+- *Genuinely hard / caveated:*
+  - **Authoritarian states (China, Russia):** "polarization" and "trust" are
+    near-meaningless where there are no competitive elections and the press is
+    controlled. China's low internal-disorder reading here is partly a measurement
+    artifact — note the σ on that gauge blows out to ~1.0, which is the model
+    honestly flagging it doesn't trust its own number. Read those with care.
+  - **Russia:** official data is opaque and politicized post-sanctions; treat
+    everything as low-confidence.
+  - **Regions (W. Europe, E. Europe, Africa, S. America):** a continent is not one
+    civilization. Options, worst to best: pick the dominant economy as a proxy;
+    GDP-weight member states into a composite; or treat a genuine bloc (the Eurozone,
+    which Dalio does) as a unit. Africa and South America as single Big Cycle readings
+    are the weakest — better as a small panel of their largest economies.
+
+The dashboard's country selector reads `country_meta`, so every profile you add
+shows up automatically.
 
 ## Honesty notes
 

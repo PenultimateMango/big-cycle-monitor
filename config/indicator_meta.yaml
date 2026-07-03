@@ -1,0 +1,111 @@
+# Natural-language labels, display suffixes, and plain-English definitions for the
+# dashboard. Kept separate from thresholds.yaml so scoring rules stay clean.
+# definition = what it measures + why Dalio thinks it matters.
+
+top1_wealth_share:
+  label: "Top 1% wealth share"
+  suffix: "%"
+  definition: "Share of national wealth held by the wealthiest 1%. Dalio treats a widening wealth gap as a primary driver of internal disorder — the resentment that pushes a society from Stage 4 excess toward Stage 5 conflict."
+  source: "World Inequality Database (WID.world); Fed Distributional Financial Accounts"
+
+income_gini:
+  label: "Income inequality (Gini)"
+  suffix: ""
+  definition: "How unequally income is spread, from 0 (perfectly equal) to 1 (one person has it all). Complements the wealth gap; entrenched inequality erodes the shared prosperity that holds Stage 3 together."
+  source: "U.S. Census Bureau (CPS/ACS); World Bank"
+
+political_polarization:
+  label: "Political polarization"
+  suffix: ""
+  definition: "How far apart the two parties sit ideologically, from congressional voting records, scaled 0–1. Dalio flags the loss of a workable middle as a hallmark of late-stage internal disorder."
+  source: "Voteview DW-NOMINATE (voteview.com)"
+
+institutional_trust:
+  label: "Trust in government"
+  suffix: "%"
+  definition: "Share of the public that trusts the federal government to do what's right. Falling trust weakens a system's ability to make and enforce decisions — a defining symptom of Stage 5."
+  source: "Pew Research Center; Gallup"
+
+populist_vote_share:
+  label: "Populist vote share"
+  suffix: "%"
+  definition: "Combined vote for populist candidates of the left and right. Dalio reads the simultaneous rise of populism on both extremes as the signature of a society splitting under strain."
+  source: "Curated from national election results"
+
+unrest_events:
+  label: "Civil unrest intensity"
+  suffix: " idx"
+  definition: "Frequency and intensity of protests, riots, and political violence, scaled 0–100. The most direct real-time read on how close internal conflict is to boiling over."
+  source: "GDELT Project (event tone); ACLED U.S. Crisis Monitor"
+
+gov_debt_gdp:
+  label: "Government debt / GDP"
+  suffix: "%"
+  definition: "Total public debt as a share of the economy. The headline gauge of how far the long-term debt cycle has run; high and rising levels mark its late, fragile phase."
+  source: "FRED / U.S. Treasury (GFDEGDQ188S)"
+
+total_nonfin_debt_gdp:
+  label: "Total non-financial debt / GDP"
+  suffix: "%"
+  definition: "All public plus private non-financial debt relative to GDP. Captures economy-wide leverage, not just the government's — a fuller picture of systemic fragility."
+  source: "Bank for International Settlements (BIS) credit statistics"
+
+interest_pct_revenue:
+  label: "Interest cost / revenue"
+  suffix: "%"
+  definition: "Share of federal revenue eaten by interest payments. Dalio's key late-stage tripwire: when debt service crowds out everything else, the squeeze becomes self-reinforcing."
+  source: "U.S. Treasury Fiscal Data; FRED; CBO"
+
+cb_balance_sheet_gdp:
+  label: "Central bank balance sheet / GDP"
+  suffix: "%"
+  definition: "The Fed's holdings relative to the economy — a proxy for money printing. Sustained expansion signals the monetization phase, where the bank funds deficits directly."
+  source: "Federal Reserve (FRED: WALCL) / BEA GDP"
+
+policy_room:
+  label: "Policy rate (room to cut)"
+  suffix: "%"
+  definition: "The nominal policy rate, standing in for how much conventional ammunition the central bank has left. Near-zero means no room, a late-cycle vulnerability; higher means more room to respond."
+  source: "Federal Reserve (FRED: DFF)"
+
+foreign_treasury_share:
+  label: "Foreign-held debt share"
+  suffix: "%"
+  definition: "Share of Treasuries held by foreign investors. A declining trend signals waning external confidence in the debt — an early warning on the road to reserve-status loss."
+  source: "U.S. Treasury (FRED: FDHBFIN / GFDEBTN)"
+
+reserve_currency_share:
+  label: "Reserve currency share"
+  suffix: "%"
+  definition: "The dollar's share of global central-bank reserves. Reserve status is the debt cycle's ultimate backstop; its slow erosion is the deepest, slowest signal of decline."
+  source: "IMF COFER (Currency Composition of Official FX Reserves)"
+
+rival_power_gap:
+  label: "Power gap vs. top rival"
+  suffix: ""
+  definition: "The leading power's overall strength minus its nearest challenger's, scaled 0–1. A narrowing gap is Dalio's core external-order risk — the classic setup for great-power conflict."
+  source: "Derived power index; Dalio Great Powers Index"
+
+military_balance:
+  label: "Military spending balance"
+  suffix: "%"
+  definition: "The top rival's military spending as a share of the leader's. A rising ratio signals a shifting balance of hard power and a higher risk of confrontation."
+  source: "SIPRI Military Expenditure Database (via World Bank)"
+
+conflict_intensity:
+  label: "Global conflict intensity"
+  suffix: " idx"
+  definition: "Real-time intensity of conflictual events worldwide, scaled 0–100. Dalio's global conflict gauge has sat near its highest levels since the World Wars."
+  source: "GDELT Project; Dalio global conflict gauge"
+
+five_wars_composite:
+  label: "Five-front conflict ladder"
+  suffix: ""
+  definition: "Average intensity across Dalio's five escalation fronts — trade, technology, capital, geopolitical, and military. Conflict climbs these rungs before it ever turns to shooting."
+  source: "Derived: Global Trade Alert, export-control & OFAC data, ACLED"
+
+bloc_alignment:
+  label: "Bloc alignment"
+  suffix: ""
+  definition: "How sharply the world is splitting into rival alliances, scaled 0–1. Rising alignment into opposing blocs is a precondition for the systemic conflict that resets a world order."
+  source: "Derived from GDELT alliance/influence signals"

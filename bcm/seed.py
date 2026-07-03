@@ -13,7 +13,7 @@ def seed(cfg: dict, store: Store, country: str = "US") -> int:
     n = 0
     for c in CYCLES:
         for name, ind in cfg[c]["indicators"].items():
-            if "current_reading" not in ind:
+            if ind.get("applicable") is False or "current_reading" not in ind:
                 continue
             store.upsert(
                 Observation(

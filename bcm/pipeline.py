@@ -5,30 +5,40 @@ from datetime import date
 
 from pathlib import Path
 
-from .registry import INDICATORS
+from .registry import INDICATORS, indicators_for
 from .sources.base import Observation
 from .sources.csv_source import CsvSource
 from .sources.fred import FredSource
 from .sources.gdelt import GdeltSource
 from .sources.treasury import TreasurySource
+from .sources.worldbank import WorldBankSource
 from .store import Store
 
 
 def refresh(store: Store, country: str = "US", manual_dir=None, verbose: bool = True) -> dict[str, str]:
-    """Fetch every indicator we can (FRED, GDELT, CSV). Returns {indicator: status}."""
+    """Fetch every indicator we can for `country`. Returns {indicator: status}."""
+    root = Path(__file__).resolve().parents[1]
     if manual_dir is None:
-        manual_dir = Path(__file__).resolve().parents[1] / "data" / "manual"
-    fred, gdelt, treasury = FredSource(), GdeltSource(), TreasurySource()
+        # US keeps data/manual; other countries get data/manual/<country>
+        manual_dir = root / "data" / "manual" if country == "US" else root / "data" / "manual" / country
+    fred, gdelt, treasury, wb = FredSource(), GdeltSource(), TreasurySource(), WorldBankSource()
     csvs = CsvSource(manual_dir)
+    indicators = indicators_for(country)
     status: dict[str, str] = {}
 
-    for name, spec in INDICATORS.items():
+    for name, spec in indicators.items():
         try:
             if spec.kind == "fred":
                 d, v = fred.series(spec.series[0]); val = v * spec.scale
+            elif spec.kind == "wb":
+                d, v = wb.series(spec.series[0]); val = v * spec.scale
             elif spec.kind == "fred_ratio":
                 d0, v0 = fred.series(spec.series[0])
                 d1, v1 = fred.series(spec.series[1])
+                val, d = (v0 / v1) * spec.scale, max(d0, d1)
+            elif spec.kind == "wb_ratio":
+                d0, v0 = wb.series(spec.series[0])
+                d1, v1 = wb.series(spec.series[1])
                 val, d = (v0 / v1) * spec.scale, max(d0, d1)
             elif spec.kind == "treasury":
                 d, v = treasury.series(spec.series[0]); val = v * spec.scale

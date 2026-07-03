@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from bcm import scoring
 from bcm.arc import render_arc
+from bcm.panels import ABOUT_SECTIONS, STYLE, load_meta, render_panels
 from bcm.seed import seed
 from bcm.store import Store
 
@@ -33,22 +34,26 @@ st.markdown("""<style>
 
 
 @st.cache_resource
-def _cfg():
+def _base_cfg():
     return scoring.load_config(ROOT / "config" / "thresholds.yaml")
 
 
-def _readings():
+def _readings(cfg, country):
     store = Store(ROOT / "data" / "bcm.duckdb")
-    vals = store.latest_values()
+    vals = store.latest_values(country=country)
     if not vals:                                  # empty store -> seed for first run
-        seed(_cfg(), store)
-        vals = store.latest_values()
+        seed(cfg, store, country=country)
+        vals = store.latest_values(country=country)
     store.close()
     return vals
 
 
-cfg = _cfg()
-readings = _readings()
+base = _base_cfg()
+countries = list((base.get("country_meta") or {"US": "United States"}).keys())
+choice = st.sidebar.selectbox("Country / region", countries,
+                              format_func=lambda c: base.get("country_meta", {}).get(c, c))
+cfg = scoring.resolve_country(base, choice)
+readings = _readings(cfg, choice)
 
 # ---- sidebar: live weights + band width -----------------------------------
 st.sidebar.header("Weights")
@@ -65,7 +70,12 @@ res = scoring.run(cfg, readings)
 
 # ---- header ---------------------------------------------------------------
 lo, hi = res["band"]
-st.markdown(f"# Big Cycle Monitor — {cfg['meta']['country']}")
+st.markdown(f"# Big Cycle Monitor — {cfg.get('_name', cfg['meta']['country'])}")
+
+with st.expander("About · what the Big Cycle is and how to read this dashboard"):
+    for _h, _b in ABOUT_SECTIONS:
+        st.markdown(f"**{_h}.** {_b}")
+
 c1, c2, c3 = st.columns([1, 1, 2])
 c1.metric("Composite stage", f"{res['composite']:.2f}", help="1 = new order · 6 = civil war/revolution")
 c2.metric("Band", f"{lo:.2f}–{hi:.2f}", f"+{res['widening_pct']:.0f}% vs independent", delta_color="off")
@@ -77,22 +87,13 @@ c3.markdown(f"<div class='cap'>correlation between cycles widens the band by "
 st.components.v1.html(
     f"<div style='background:#0d1420'>{render_arc(res, cfg)}</div>", height=340)
 
-# ---- gauge panels ---------------------------------------------------------
-cols = st.columns(3)
-for col, c in zip(cols, scoring.CYCLES):
-    with col:
-        st.markdown(f"### {cfg[c]['label']}")
-        st.markdown(f"<div class='cap'>stage {res['gauges'][c]:.2f} · σ {res['sigmas'][c]:.2f}</div>",
-                    unsafe_allow_html=True)
-        for name, stage in res["details"][c].items():
-            st.markdown(
-                f"<div style='display:flex;justify-content:space-between;font-size:13px;margin:4px 0'>"
-                f"<span>{name}</span><span style='font-family:IBM Plex Mono,monospace;color:#c6a15b'>"
-                f"{stage:.1f}</span></div>"
-                f"<div style='height:5px;border-radius:3px;background:rgba(232,230,223,.08)'>"
-                f"<div style='height:5px;border-radius:3px;width:{stage/6*100:.0f}%;"
-                f"background:linear-gradient(90deg,#c6a15b,#e3c98a)'></div></div>",
-                unsafe_allow_html=True)
+# ---- gauge panels: labeled Value/Stage columns + expandable definitions ----
+meta = load_meta(ROOT / "config" / "indicator_meta.yaml")
+panels_html = STYLE + render_panels(res, readings, cfg, meta)
+st.components.v1.html(
+    f"<div style='background:#0d1420;font-family:sans-serif'>{panels_html}</div>",
+    height=560, scrolling=True)
 
-st.caption("Values illustrative until `refresh` pulls live sources. "
+st.caption("Click the ⓘ beside any indicator for what it measures and why it matters. "
+           "Values illustrative until `refresh` pulls live sources. "
            "Anchors and correlations are documented judgment, not fitted parameters.")
