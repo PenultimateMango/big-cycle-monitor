@@ -1,0 +1,291 @@
+# =============================================================================
+# thresholds.yaml  ·  Big Cycle Monitor scoring rules
+# -----------------------------------------------------------------------------
+# Encodes Dalio's stage markers into concrete, adjustable scoring rules.
+# The pipeline pulls RAW values from APIs; this file maps raw -> stage (1..6)
+# and blends the three cycle gauges into a composite BAND (not a point).
+#
+# Two independent anti-double-count mechanisms (see notes below):
+#   (1) LITERAL overlap  -> every indicator has exactly one `home` gauge.
+#   (2) LATENT  overlap  -> a correlation matrix widens the composite band.
+#
+# All `current_reading` values are ILLUSTRATIVE (~2024) placeholders for
+# layout/testing only. The live pipeline overwrites them per refresh.
+# =============================================================================
+
+meta:
+  version: 0.2.0
+  country: US                 # active profile; see country_overrides below
+  stage_range: [1, 6]
+  updated: illustrative
+
+# -----------------------------------------------------------------------------
+# Scoring method: piecewise-linear interpolation over (raw_value, stage) anchors.
+# Anchors are sorted ascending by raw_value. Stage may rise OR fall across them,
+# so "direction" is encoded implicitly by the anchors (no separate flag needed).
+# Values outside the anchor range are clamped to the nearest endpoint.
+# -----------------------------------------------------------------------------
+method:
+  interpolation: linear
+  clamp: true
+  # per-gauge uncertainty = weighted stdev of its constituent indicator stages
+  # (i.e. how much the indicators DISAGREE). Dispersion IS the uncertainty.
+  gauge_sigma_from: constituent_dispersion
+
+# =============================================================================
+# CYCLE 1 — INTERNAL ORDER / DISORDER   (the nearest-term risk, per Dalio)
+# =============================================================================
+internal_order:
+  label: Internal order / disorder
+  stages: [New order, Institutions built, Peace & prosperity,
+           Excess & gaps, Bad finances & conflict, Civil war / revolution]
+  indicators:
+
+    top1_wealth_share:
+      home: internal_order
+      source: WID.world | Fed Distributional Financial Accounts
+      unit: "% of national wealth held by top 1%"
+      weight: 0.18
+      current_reading: 31
+      anchors: [[20, 2.5], [25, 3.3], [30, 4.2], [33, 4.8], [38, 5.6], [45, 6.0]]
+
+    income_gini:
+      home: internal_order
+      source: US Census (CPS/ACS)
+      unit: "Gini coefficient 0..1"
+      weight: 0.12
+      current_reading: 0.48
+      anchors: [[0.35, 2.0], [0.42, 3.0], [0.46, 4.0], [0.49, 4.8], [0.55, 6.0]]
+
+    political_polarization:
+      home: internal_order
+      source: Voteview DW-NOMINATE (party-mean distance, normalized 0..1)
+      unit: "normalized 0..1"
+      weight: 0.22
+      current_reading: 0.90
+      anchors: [[0.30, 2.0], [0.50, 3.0], [0.70, 4.2], [0.85, 5.2], [1.00, 6.0]]
+
+    institutional_trust:      # LOWER trust = LATER stage (anchors fall)
+      home: internal_order
+      source: Pew | Gallup
+      unit: "% who trust govt to do right most of the time"
+      weight: 0.15
+      current_reading: 20
+      anchors: [[10, 6.0], [15, 5.8], [22, 5.0], [30, 4.0], [40, 3.0], [55, 2.0]]
+
+    populist_vote_share:
+      home: internal_order
+      source: curated election data (left + right populist vote)
+      unit: "% combined populist vote"
+      weight: 0.15
+      current_reading: 35
+      anchors: [[10, 2.0], [20, 3.0], [30, 4.0], [40, 5.0], [55, 6.0]]
+
+    unrest_events:
+      home: internal_order
+      source: ACLED (US Crisis Monitor) | GDELT (normalized 0..100)
+      unit: "normalized intensity 0..100"
+      weight: 0.18
+      current_reading: 55
+      anchors: [[20, 2.5], [40, 3.5], [55, 4.3], [70, 5.2], [90, 6.0]]
+  # -> gauge ≈ 4.7  (hottest of the three; consistent with Dalio's ordering)
+
+# =============================================================================
+# CYCLE 2 — DEBT / MONEY / CREDIT   (late, but cushioned by reserve status)
+# =============================================================================
+debt_money:
+  label: Debt & money cycle
+  stages: [Sound money, Credit expansion, Bubble / top,
+           Debt crisis, Monetization, Debasement / reserve loss]
+  indicators:
+
+    gov_debt_gdp:
+      home: debt_money
+      source: "IMF | FRED (note: general-govt gross, not just federal)"
+      unit: "% of GDP"
+      weight: 0.22
+      current_reading: 123
+      anchors: [[20, 1.5], [50, 2.5], [80, 3.5], [100, 4.2], [120, 4.8], [140, 5.3], [180, 6.0]]
+
+    total_nonfin_debt_gdp:
+      home: debt_money
+      source: BIS credit-to-non-financial-sector
+      unit: "% of GDP (public + private non-financial)"
+      weight: 0.15
+      current_reading: 255
+      anchors: [[150, 2.0], [200, 3.0], [250, 4.0], [275, 4.6], [300, 5.2], [350, 6.0]]
+
+    interest_pct_revenue:     # KEY late-stage tripwire — Dalio weights this heavily
+      home: debt_money
+      source: US Treasury Fiscal Data | CBO
+      unit: "net interest as % of federal revenue"
+      weight: 0.22
+      current_reading: 18
+      anchors: [[5, 2.0], [10, 3.0], [14, 4.0], [18, 4.8], [22, 5.4], [30, 6.0]]
+
+    cb_balance_sheet_gdp:
+      home: debt_money
+      source: FRED (WALCL / GDP)
+      unit: "central-bank assets as % of GDP (monetization proxy)"
+      weight: 0.13
+      current_reading: 25
+      anchors: [[5, 1.5], [15, 3.0], [25, 4.0], [35, 5.0], [50, 6.0]]
+
+    policy_room:              # AMPLE room to cut = EARLIER (post-2022 hiking gave ammo)
+      home: debt_money
+      source: FRED (effective fed funds rate as room-to-ELB proxy)
+      unit: "nominal policy rate %"
+      weight: 0.10
+      current_reading: 4.3
+      anchors: [[0.0, 6.0], [1.0, 5.0], [2.5, 4.0], [4.0, 3.0], [5.5, 2.5]]
+
+    foreign_treasury_share:   # DECLINING foreign demand = LATER (anchors fall)
+      home: debt_money
+      source: US Treasury TIC
+      unit: "% of marketable Treasuries held abroad"
+      weight: 0.10
+      current_reading: 30
+      anchors: [[20, 5.6], [28, 4.8], [33, 4.0], [40, 3.0], [50, 2.0]]
+
+    reserve_currency_share:   # SHARED — see shared_indicators. Single home = debt_money.
+      home: debt_money
+      shared_with: [external_order, power_index]
+      source: IMF COFER (USD share of allocated reserves)
+      unit: "% of global allocated reserves"
+      weight: 0.08
+      current_reading: 58
+      anchors: [[25, 6.0], [40, 5.5], [50, 4.5], [58, 3.6], [62, 3.2], [70, 2.5]]
+  # -> gauge ≈ 4.3  (reserve status + policy room pull it OFF a 5.x reading)
+
+# =============================================================================
+# CYCLE 3 — EXTERNAL ORDER / DISORDER   (elevated; rival ascending)
+# =============================================================================
+external_order:
+  label: External order / disorder
+  stages: [New order / peace, Cooperation, Rising rival,
+           Escalating conflict, At the brink, War / new order]
+  indicators:
+
+    rival_power_gap:          # NARROWING gap = LATER (anchors fall)
+      home: external_order
+      source: your power index | Dalio Great Powers Index (leader minus top rival)
+      unit: "power-index gap 0..1 (US minus top rival)"
+      weight: 0.22
+      current_reading: 0.12
+      anchors: [[0.00, 5.6], [0.06, 5.0], [0.12, 4.2], [0.20, 3.3], [0.30, 2.5], [0.50, 1.5]]
+
+    military_balance:
+      home: external_order
+      source: SIPRI (top rival mil-spend / leader mil-spend)
+      unit: "% (rival spending relative to leader)"
+      weight: 0.15
+      current_reading: 33
+      anchors: [[15, 2.0], [25, 3.0], [35, 3.8], [50, 4.6], [75, 5.4], [100, 6.0]]
+
+    conflict_intensity:
+      home: external_order
+      source: GDELT (Goldstein) | Dalio global conflict gauge, normalized 0..100
+      unit: "normalized 0..100"
+      weight: 0.18
+      current_reading: 78
+      anchors: [[20, 2.0], [40, 3.0], [55, 3.8], [70, 4.6], [85, 5.4], [100, 6.0]]
+
+    five_wars_composite:      # Dalio's escalation ladder — mean of 5 sub-gauges (0..1)
+      home: external_order
+      source: derived (see sub_gauges)
+      unit: "mean of 5 war-type intensities 0..1"
+      weight: 0.25
+      current_reading: 0.63
+      anchors: [[0.20, 2.0], [0.40, 3.0], [0.55, 3.8], [0.70, 4.6], [0.85, 5.4], [1.00, 6.0]]
+      sub_gauges:             # display + adjustable; averaged into current_reading
+        trade_war:        {value: 0.70, source: Global Trade Alert}
+        technology_war:   {value: 0.80, source: export-control / entity-list trackers}
+        capital_war:      {value: 0.60, source: OFAC sanctions | asset-freeze counts}
+        geopolitical_war: {value: 0.70, source: GDELT alliance/influence signals}
+        military_war:     {value: 0.35, source: ACLED | direct-vs-proxy conflict}
+
+    bloc_alignment:
+      home: external_order
+      source: GDELT alliance clustering | manual axis/allied index
+      unit: "bloc polarization 0..1"
+      weight: 0.20
+      current_reading: 0.60
+      anchors: [[0.20, 2.0], [0.40, 3.0], [0.60, 4.0], [0.75, 5.0], [0.90, 6.0]]
+  # -> gauge ≈ 4.2
+
+# =============================================================================
+# SHARED INDICATOR REGISTRY  (mechanism #1: prevent LITERAL double-counting)
+# Rule: an indicator is SCORED in its `home` gauge only. Elsewhere it may be
+# DISPLAYED but must not enter another gauge's weighted mean.
+# =============================================================================
+shared_indicators:
+  reserve_currency_share:
+    scored_home: debt_money
+    display_only_in: [external_order, power_index]
+    rationale: >
+      Reserve status is the debt cycle's ultimate backstop (mitigates debt risk),
+      but it's also a power measure and an external-order lever. Scoring it once
+      avoids counting the same fact as three independent votes.
+
+# =============================================================================
+# COMPOSITE  (mechanism #2: correlation widens the band for LATENT overlap)
+#
+#   point   = Σ w_g · gauge_g
+#   band    = point ± z · sqrt( wᵀ Σ w ),   Σ = D R D
+#             D = diag(gauge_sigma),  R = correlation matrix below
+#
+# The gauges are NOT independent: a debt crisis drives wealth gaps -> internal
+# disorder; reserve status / capital wars link money to geopolitics. Treating
+# them as independent understates the band by ~40% in exactly the late-stage
+# zone we care about (see scorer.py: ±0.32 naive -> ±0.45 correlated).
+# =============================================================================
+composite:
+  gauge_weights:            # analyst prior: internal disorder = nearest-term risk
+    internal_order: 0.40
+    debt_money:     0.35
+    external_order: 0.25
+  gauge_sigma:              # fallback if not computed from dispersion
+    internal_order: 0.50
+    debt_money:     0.60
+    external_order: 0.55
+  correlation:              # documented judgment, not measured — tune openly
+    internal_order__debt_money:     0.60
+    internal_order__external_order: 0.40
+    debt_money__external_order:     0.50
+  band_z: 1.0               # 1 sigma; set 1.28 for ~80%, 1.64 for ~90%
+  # -> composite ≈ 4.5, band ≈ [4.0, 4.9]  (illustrative)
+
+# =============================================================================
+# COUNTRY ADAPTATION SCAFFOLD
+# Everything above is the US profile. To add a country, override only the knobs
+# that differ — the SCHEMA and MECHANISMS are universal. Design seams:
+#
+#   * reserve_currency_share      -> applies only to reserve issuers; set
+#                                    `applicable: false` elsewhere and redistribute weight.
+#   * debt_in_own_currency        -> emerging markets carry FX debt risk; add an
+#                                    indicator and steepen debt anchors.
+#   * anchors                     -> developed vs emerging differ (a 60% debt/GDP
+#                                    reading is not the same stage everywhere).
+#   * rival_power_gap             -> flips sign for a RISING power (gap favors them).
+#   * data sources                -> swap national statistical offices where FRED etc.
+#                                    don't cover the country/region.
+#   * regions (W. Europe, Africa, S. America) -> aggregate as GDP-weighted composites
+#                                    of member states, or treat as a bloc (Dalio treats
+#                                    the Eurozone as a single unit).
+# =============================================================================
+country_overrides:
+  CHN:                      # STUB — illustrative pattern only, not calibrated
+    meta: {country: CHN}
+    debt_money:
+      indicators:
+        reserve_currency_share: {applicable: false}   # weight redistributes
+        debt_in_own_currency:
+          home: debt_money
+          source: BIS | PBoC
+          unit: "% of total debt denominated in own currency"
+          weight: 0.10
+          anchors: [[70, 5.5], [85, 4.5], [95, 3.5], [99, 2.5]]
+    external_order:
+      indicators:
+        rival_power_gap:    # rising power: a NEGATIVE gap vs leader = ascendant, earlier-stage externally
+          anchors: [[-0.20, 2.0], [-0.10, 2.8], [0.00, 3.6], [0.12, 4.4], [0.30, 5.4]]

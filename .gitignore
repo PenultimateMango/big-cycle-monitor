@@ -1,0 +1,10 @@
+# runtime DB — rebuilt each run; we version data/snapshot.json + history.csv instead
+data/bcm.duckdb
+live_arc.html
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.streamlit/

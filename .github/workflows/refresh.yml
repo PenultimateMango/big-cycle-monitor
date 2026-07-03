@@ -1,0 +1,48 @@
+name: refresh
+
+# Weekly is plenty — the underlying series are monthly/quarterly. Bump the cron
+# if you add a fast source. workflow_dispatch lets you run it on demand.
+on:
+  schedule:
+    - cron: "0 6 * * 1"        # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write               # needed to commit the refreshed artifacts back
+
+concurrency:                    # don't let two refreshes race
+  group: refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Bootstrap manual CSVs (idempotent — never clobbers real data)
+        run: python scripts/init_manual.py
+
+      - name: Refresh live sources
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/run.py refresh
+
+      - name: Write snapshot, history, and rendered arc
+        run: python scripts/snapshot.py
+
+      - name: Commit refreshed artifacts
+        run: |
+          git config user.name  "bcm-bot"
+          git config user.email "actions@github.com"
+          git add data/snapshot.json data/history.csv docs/index.html data/manual/*.csv
+          git diff --staged --quiet || git commit -m "chore: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push

@@ -1,0 +1,33 @@
+{
+  "as_of": "2026-07-03T16:01:46Z",
+  "country": "US",
+  "composite": 4.414,
+  "band": [
+    3.961,
+    4.866
+  ],
+  "widening_pct": 40.8,
+  "gauges": {
+    "internal_order": 4.909,
+    "debt_money": 4.103,
+    "external_order": 4.057
+  },
+  "sigmas": {
+    "internal_order": 0.501,
+    "debt_money": 0.6,
+    "external_order": 0.55
+  },
+  "readings": {
+    "institutional_trust": 20.0,
+    "populist_vote_share": 35.0,
+    "five_wars_composite": 0.63,
+    "reserve_currency_share": 58.0,
+    "foreign_treasury_share": 30.0,
+    "military_balance": 33.0,
+    "unrest_events": 55.0,
+    "total_nonfin_debt_gdp": 255.0,
+    "bloc_alignment": 0.6,
+    "political_polarization": 0.9,
+    "rival_power_gap": 0.12
+  }
+}
