@@ -33,3 +33,19 @@ class CsvSource(Source):
         if latest_d is None:
             raise ValueError(f"no valid rows in {path}")
         return latest_d, latest_v
+
+    def history(self, series_id: str) -> list[tuple[date, float]]:
+        """Every valid row, ascending — the payoff for appending, not replacing."""
+        path = self.base_dir / series_id
+        if not path.exists():
+            raise FileNotFoundError(f"no CSV at {path}")
+        rows: list[tuple[date, float]] = []
+        with open(path, newline="") as f:
+            for row in csv.DictReader(f):
+                if not row.get("value") or row["value"].strip() in (".", ""):
+                    continue
+                rows.append((date.fromisoformat(row["date"].strip()),
+                             float(row["value"])))
+        if not rows:
+            raise ValueError(f"no valid rows in {path}")
+        return sorted(rows)

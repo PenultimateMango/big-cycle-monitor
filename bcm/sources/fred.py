@@ -35,3 +35,16 @@ class FredSource(Source):
             if obs["value"] not in (".", "", None):
                 return date.fromisoformat(obs["date"]), float(obs["value"])
         raise ValueError(f"no valid observations for {series_id}")
+
+    def history(self, series_id: str) -> list[tuple[date, float]]:
+        """Full series, ascending. One call returns everything (FRED caps at
+        100k obs per request — even daily fed funds since 1954 fits)."""
+        if not self.api_key:
+            raise RuntimeError("FRED_API_KEY not set — export it or pass api_key=")
+        params = {"series_id": series_id, "api_key": self.api_key,
+                  "file_type": "json", "sort_order": "asc", "limit": 100000}
+        r = requests.get(_ENDPOINT, params=params, timeout=self.timeout)
+        r.raise_for_status()
+        return [(date.fromisoformat(o["date"]), float(o["value"]))
+                for o in r.json()["observations"]
+                if o["value"] not in (".", "", None)]

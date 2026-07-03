@@ -97,3 +97,25 @@ st.components.v1.html(
 st.caption("Click the ⓘ beside any indicator for what it measures and why it matters. "
            "Values illustrative until `refresh` pulls live sources. "
            "Anchors and correlations are documented judgment, not fitted parameters.")
+
+# ---- indicator history charts ----------------------------------------------
+from bcm.charts import HISTORY_STYLE, render_history_section
+
+
+def _histories(country):
+    store = Store(ROOT / "data" / "bcm.duckdb")
+    hs = store.all_series(country=country)
+    store.close()
+    return hs
+
+
+hists = _histories(choice)
+if any(len(v) >= 3 for v in hists.values()):
+    hist_html = HISTORY_STYLE + render_history_section(hists, cfg, meta)
+    st.components.v1.html(
+        f"<div style='background:#0d1420;font-family:sans-serif'>{hist_html}</div>",
+        height=1400, scrolling=True)
+else:
+    st.caption("No time-series history in the store yet — run "
+               "`python scripts/run.py backfill` (needs FRED_API_KEY) to load "
+               "full FRED/World Bank history, and charts appear here.")

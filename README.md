@@ -126,3 +126,25 @@ shows up automatically.
   Calibrate against Dalio's Great Powers Index or US historical percentiles.
 - `current_reading` values in the config are illustrative until `refresh` runs.
 ```
+
+## Time-series charts (added)
+
+Every indicator now renders a history chart on the dashboard — line + latest
+reading, with **stage-band shading** derived from that indicator's own anchors:
+the tint deepens toward Stage-6 territory, so "when did this metric cross into
+Stage 5" is readable at a glance (bands sit at the top for rising-is-later
+indicators like debt, at the bottom for falling-is-later ones like trust).
+
+Where history comes from:
+* **FRED / World Bank indicators** — `python scripts/run.py backfill` pulls the
+  full published series (decades) in one call per indicator. The CI workflow
+  runs this every refresh, since the DuckDB store is rebuilt from scratch each run.
+* **Manual indicators** — the chart is your CSV: every row you've appended in
+  `data/manual/*.csv` plots. Append, never replace, and the chart grows.
+* **GDELT indicators** — no history endpoint; their charts build up from
+  accumulated runs.
+
+Ratio indicators are backfilled **date-aligned**: each numerator observation is
+paired with the nearest denominator observation (≤400 days), which handles the
+quarterly-numerator / annual-denominator cadence of `foreign_treasury_share`
+properly across the whole series.

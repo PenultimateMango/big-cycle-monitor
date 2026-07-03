@@ -47,5 +47,47 @@ class Store:
         ).fetchall()
         return {ind: val for ind, val in rows}
 
+    def insert_many(self, indicator: str, rows, source: str, series_id: str = "",
+                    unit: str = "", country: str = "US") -> int:
+        """Bulk-insert (date, value) rows — used by backfill."""
+        from datetime import datetime
+        now = datetime.utcnow()
+        self.con.executemany(
+            "INSERT INTO observations VALUES (?,?,?,?,?,?,?,?)",
+            [[indicator, d, v, source, series_id, unit, now, country] for d, v in rows],
+        )
+        return len(rows)
+
+    def series(self, indicator: str, country: str = "US") -> list:
+        """Full history for one indicator, ascending, deduped per obs_date
+        (freshest as_of wins — so re-running backfill never double-plots)."""
+        return self.con.execute(
+            """
+            SELECT obs_date, value FROM observations
+            WHERE country = ? AND indicator = ?
+            QUALIFY row_number() OVER
+                (PARTITION BY obs_date ORDER BY as_of DESC) = 1
+            ORDER BY obs_date
+            """,
+            [country, indicator],
+        ).fetchall()
+
+    def all_series(self, country: str = "US") -> dict[str, list]:
+        """{indicator: [(date, value), ...]} for every indicator — one query."""
+        rows = self.con.execute(
+            """
+            SELECT indicator, obs_date, value FROM observations
+            WHERE country = ?
+            QUALIFY row_number() OVER
+                (PARTITION BY indicator, obs_date ORDER BY as_of DESC) = 1
+            ORDER BY indicator, obs_date
+            """,
+            [country],
+        ).fetchall()
+        out: dict[str, list] = {}
+        for ind, d, v in rows:
+            out.setdefault(ind, []).append((d, v))
+        return out
+
     def close(self) -> None:
         self.con.close()

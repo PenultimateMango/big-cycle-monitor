@@ -137,16 +137,20 @@ STYLE = """<style>
 </style>"""
 
 
-def dashboard_page(result: dict, readings: dict, cfg: dict, meta: dict) -> str:
+def dashboard_page(result: dict, readings: dict, cfg: dict, meta: dict,
+                   histories: dict | None = None) -> str:
+    from .charts import render_history_section, HISTORY_STYLE
     lo, hi = result["band"]
     name = cfg.get("_name", cfg["meta"]["country"])
     arc = render_arc(result, cfg)
     panels = render_panels(result, readings, cfg, meta)
+    history = render_history_section(histories, cfg, meta) if histories else ""
     return f'''<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Big Cycle Monitor — {name}</title>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;1,400&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 {STYLE}
+{HISTORY_STYLE}
 <style>
   body{{margin:0;background:#0d1420;color:#e8e6df;font-family:'IBM Plex Sans',sans-serif;padding:30px 22px 60px}}
   .wrap{{max-width:1120px;margin:0 auto}}
@@ -162,6 +166,7 @@ def dashboard_page(result: dict, readings: dict, cfg: dict, meta: dict) -> str:
   {about_html()}
   <div class="arc-wrap">{arc}</div>
   {panels}
+  {history}
   <div class="cap" style="margin-top:22px">Click the ⓘ beside any indicator for what it measures and why it matters.
        Values illustrative until <code>refresh</code> pulls live sources.</div>
 </div></body></html>'''

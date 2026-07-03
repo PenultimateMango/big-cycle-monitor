@@ -8,3 +8,5 @@ __pycache__/
 .venv/
 venv/
 .streamlit/
+preview_charts.html
+live_dashboard.html

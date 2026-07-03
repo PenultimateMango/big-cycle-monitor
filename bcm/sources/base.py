@@ -16,8 +16,13 @@ class Observation:
 
 
 class Source:
-    """Minimal contract: return the most recent (date, value) for a series_id."""
+    """Minimal contract: return the most recent (date, value) for a series_id.
+    Sources that can serve full history also implement history()."""
     name = "base"
 
     def series(self, series_id: str) -> tuple[date, float]:
         raise NotImplementedError
+
+    def history(self, series_id: str) -> list[tuple[date, float]]:
+        """Full available history, ascending by date. Powers backfill + charts."""
+        raise NotImplementedError(f"{self.name} has no history endpoint")

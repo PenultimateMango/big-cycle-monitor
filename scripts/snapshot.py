@@ -22,7 +22,9 @@ from bcm.store import Store
 def main():
     country = sys.argv[1] if len(sys.argv) > 1 else "US"
     cfg = scoring.resolve_country(scoring.load_config(ROOT / "config" / "thresholds.yaml"), country)
-    readings = Store(ROOT / "data" / "bcm.duckdb").latest_values(country=country)
+    store = Store(ROOT / "data" / "bcm.duckdb")
+    readings = store.latest_values(country=country)
+    histories = store.all_series(country=country)
     res = scoring.run(cfg, readings)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lo, hi = res["band"]
@@ -56,9 +58,9 @@ def main():
     docs = ROOT / "docs"
     docs.mkdir(exist_ok=True)
     meta = load_meta(ROOT / "config" / "indicator_meta.yaml")
-    (docs / f"{country}.html").write_text(dashboard_page(res, readings, cfg, meta))
+    (docs / f"{country}.html").write_text(dashboard_page(res, readings, cfg, meta, histories))
     if country == "US":
-        (docs / "index.html").write_text(dashboard_page(res, readings, cfg, meta))
+        (docs / "index.html").write_text(dashboard_page(res, readings, cfg, meta, histories))
 
     print(f"snapshot {country} composite={res['composite']:.2f} band=[{lo:.2f},{hi:.2f}] @ {now}")
 

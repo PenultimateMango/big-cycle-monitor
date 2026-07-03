@@ -36,6 +36,11 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/run.py refresh
 
+      - name: Backfill full history (charts)   # DB is rebuilt each run, so pull
+        env:                                   # full FRED/WB series every time —
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}   # one API call per series
+        run: python scripts/run.py backfill
+
       - name: Write snapshot, history, and rendered arc
         run: python scripts/snapshot.py
 
@@ -43,6 +48,6 @@ jobs:
         run: |
           git config user.name  "bcm-bot"
           git config user.email "actions@github.com"
-          git add data/snapshot.json data/history.csv docs/index.html data/manual/*.csv
+          git add data/snapshot.json data/history.csv docs/*.html data/manual/*.csv
           git diff --staged --quiet || git commit -m "chore: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
           git push

@@ -2,6 +2,7 @@
 """Big Cycle Monitor CLI.
 
     python scripts/run.py demo      # seed offline values + score  (no network)
+    python scripts/run.py backfill  # load FULL history for charts (needs FRED_API_KEY)
     python scripts/run.py refresh   # pull live sources into the store (needs FRED_API_KEY)
     python scripts/run.py score     # score whatever is in the store
 """
@@ -44,6 +45,10 @@ def main():
     elif cmd == "refresh":
         print(f"refreshing live sources for {country}...")
         pipeline.refresh(store, country=country)
+        _report(cfg, store.latest_values(country=country))
+    elif cmd == "backfill":
+        print(f"backfilling full history for {country} (FRED/World Bank/manual CSVs)...")
+        pipeline.backfill(store, country=country)
         _report(cfg, store.latest_values(country=country))
     elif cmd == "score":
         _report(cfg, store.latest_values(country=country))
