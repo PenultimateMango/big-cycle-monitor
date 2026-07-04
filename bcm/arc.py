@@ -38,15 +38,24 @@ def render_arc(result: dict, cfg: dict) -> str:
     lo, hi = result["band"]
     xlo, xhi = _x(lo), _x(hi)
 
-    # per-gauge ticks
+    # per-gauge ticks — labels stagger vertically when they'd crowd each other
+    # or the composite marker's label (gauges typically cluster within a stage)
     tick_svg = ""
     tick_color = {"internal_order": "#c4553b", "debt_money": "#d9a441", "external_order": "#c98a2e"}
     tick_short = {"internal_order": "internal", "debt_money": "debt", "external_order": "external"}
-    for c, stage in result["gauges"].items():
+    comp_x = _x(result["composite"])
+    ordered = sorted(result["gauges"].items(), key=lambda kv: _x(kv[1]))
+    placed: list[tuple[float, int]] = [(comp_x, 1)]      # composite label occupies tier 1
+    for c, stage in ordered:
         x, y = _x(stage), _y(stage)
+        tier = 0
+        while any(abs(x - px) < 92 and t == tier for px, t in placed):
+            tier += 1
+        placed.append((x, tier))
+        ly = y - 11 - 15 * tier
         tick_svg += (
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="{tick_color[c]}"/>'
-            f'<text x="{x:.1f}" y="{y-11:.1f}" text-anchor="middle" '
+            f'<text x="{x:.1f}" y="{ly:.1f}" text-anchor="middle" '
             f'font-family="IBM Plex Mono,monospace" font-size="10.5" fill="#9aa4b8">'
             f'{tick_short[c]} {stage:.1f}</text>'
         )
@@ -68,7 +77,7 @@ def render_arc(result: dict, cfg: dict) -> str:
 
     cx, cy = _x(comp), _y(comp)
     return f'''<svg viewBox="0 0 1000 305" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="Rise and decline arc; composite stage {comp:.2f}">
+     aria-label="Rise and decline arc; composite stage {comp:.1f}">
   <defs>
     <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#3f7a5c"/><stop offset="42%" stop-color="#5aa17a"/>
@@ -90,7 +99,7 @@ def render_arc(result: dict, cfg: dict) -> str:
     <circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.4" fill="#e8e6df"/>
   </g>
   <text x="{cx:.1f}" y="{cy-16:.1f}" text-anchor="middle" font-family="Spectral,serif"
-        font-style="italic" font-size="15" fill="#e8e6df">{cfg['meta']['country']} · {comp:.2f}</text>
+        font-style="italic" font-size="15" fill="#e8e6df">{cfg['meta']['country']} · {comp:.1f}</text>
   {lab_svg}
 </svg>'''
 
@@ -102,8 +111,8 @@ def page(svg: str, result: dict) -> str:
 <style>body{{margin:0;background:#0d1420;color:#e8e6df;font-family:'IBM Plex Sans',sans-serif;padding:28px}}
 .h{{font-family:Spectral,serif;font-size:26px;margin:0 0 2px}}.s{{color:#8a93a6;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.04em}}
 .wrap{{max-width:1040px;margin:0 auto}}</style></head>
-<body><div class="wrap"><div class="h">Composite stage {result['composite']:.2f}
-<span style="color:#c4553b">· band [{lo:.2f}, {hi:.2f}]</span></div>
+<body><div class="wrap"><div class="h">Composite stage {result['composite']:.1f}
+<span style="color:#c4553b">· band [{lo:.1f}, {hi:.1f}]</span></div>
 <div class="s">rendered from live scoring · correlation widens the band by {result['widening_pct']:.0f}%</div>
 <div style="margin-top:18px">{svg}</div></div></body></html>'''
 

@@ -54,6 +54,26 @@ def main():
                     f"{res['gauges']['debt_money']:.3f}",
                     f"{res['gauges']['external_order']:.3f}"])
 
+    # 2b) persist GDELT readings — the CI store resets every run, so committed
+    # CSV is the only durable home; backfill replays it into charts.
+    from bcm.registry import indicators_for
+    gd = ROOT / "data" / "gdelt_history.csv"
+    seen = set()
+    if gd.exists():
+        with open(gd) as f:
+            seen = {tuple(r[:3]) for r in csv.reader(f)}
+    with open(gd, "a", newline="") as f:
+        w = csv.writer(f)
+        if not seen:
+            w.writerow(["country", "indicator", "date", "value"]); seen.add(("country","indicator","date"))
+        for name, spec in indicators_for(country).items():
+            if spec.kind != "gdelt":
+                continue
+            for dt, v in store.series(name, country=country):
+                key = (country, name, dt.isoformat())
+                if key not in seen:
+                    w.writerow([country, name, dt.isoformat(), v]); seen.add(key)
+
     # 3) full dashboard (arc + labeled panels + About) for GitHub Pages
     docs = ROOT / "docs"
     docs.mkdir(exist_ok=True)

@@ -184,3 +184,23 @@ history — labeled as such on the page). The page needs no database: the
 workflow's `Build Macro Health page` step fetches live and renders static HTML
 each refresh. Build locally with `python scripts/macro_page.py` (needs
 FRED_API_KEY).
+
+## Starter histories for manual indicators (v7)
+
+The manual CSVs now ship with STARTER HISTORY so their charts render from day
+one. Two grades of data in there, be honest with yourself about which is which:
+* **Landmark values from the published series** (approximate, rounded):
+  institutional_trust (Pew), political_polarization (Voteview),
+  reserve_currency_share (IMF COFER), total_nonfin_debt_gdp (BIS). Verify or
+  refine any point against the source URLs in `config/thresholds.yaml`.
+* **Judgment backcasts** (mine, coarse): populist_vote_share, rival_power_gap,
+  bloc_alignment, and the five war CSVs. These encode a defensible reading of
+  2014-2026 escalation; re-rate them to YOUR read.
+
+GDELT indicators (conflict_intensity, unrest_events) can't be backfilled — no
+history API — so each CI run now appends the latest reading to
+`data/gdelt_history.csv` (committed), and backfill replays that file. Their
+charts grow one point per weekly run from now on.
+
+⚠ Deploying with `cp -R` REPLACES `data/manual/*.csv`. If you've appended your
+own rows to any manual CSV, merge instead of copying those files blindly.

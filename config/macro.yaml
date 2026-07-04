@@ -26,6 +26,7 @@ groups:
         series: [CPIAUCSL]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "BLS via FRED (CPIAUCSL, YoY %)"
         definition: "All-items consumer price inflation, year over year."
         bands: [[1, 3, green], [3, 4, amber], [0, 1, amber]]
@@ -35,6 +36,7 @@ groups:
         series: [CPILFESL]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "BLS via FRED (CPILFESL, YoY %)"
         definition: "Underlying inflation trend with volatile food and energy stripped out."
         bands: [[1.5, 3, green], [3, 4, amber], [0.5, 1.5, amber]]
@@ -44,6 +46,7 @@ groups:
         series: [PCEPILFE]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "BEA via FRED (PCEPILFE, YoY %)"
         definition: "The Fed's actual 2% target variable. The CPI–PCE gap is itself informative."
         bands: [[1.5, 2.5, green], [2.5, 3.5, amber], [0.5, 1.5, amber]]
@@ -53,6 +56,7 @@ groups:
         series: [CES0500000003]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "BLS via FRED (avg hourly earnings, YoY %)"
         definition: "Average hourly earnings growth, all private employees. Too cold starves demand; too hot feeds the wage-price spiral."
         bands: [[3, 5, green], [2, 3, amber], [5, 6, amber]]
@@ -62,6 +66,7 @@ groups:
         series: [CES0500000003, CPIAUCSL]
         transform: yoy
         suffix: "%"
+        decimals: 1
         source: "computed — AHE deflated by CPI, YoY %"
         definition: "Whether paychecks beat inflation. The metric that decides how the economy FEELS."
         bands: [[0.5, null, green], [-0.5, 0.5, amber]]
@@ -71,6 +76,7 @@ groups:
         series: [OPHNFB]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "BLS via FRED (nonfarm output/hour, YoY %)"
         definition: "Output per hour — the only non-inflationary source of rising living standards, and Dalio's favorite long-run force."
         bands: [[1.5, null, green], [0, 1.5, amber]]
@@ -82,6 +88,7 @@ groups:
         kind: fred
         series: [UNRATE]
         suffix: "%"
+        decimals: 1
         source: "BLS via FRED (UNRATE)"
         definition: "Headline U-3 unemployment."
         bands: [[null, 4.5, green], [4.5, 5.5, amber]]
@@ -118,6 +125,7 @@ groups:
         kind: fred
         series: [A191RL1Q225SBEA]
         suffix: "%"
+        decimals: 1
         source: "BEA via FRED (quarterly, annualized)"
         definition: "The headline growth number."
         bands: [[1.5, null, green], [0, 1.5, amber]]
@@ -127,6 +135,7 @@ groups:
         series: [INDPRO]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "Federal Reserve via FRED (INDPRO, YoY %)"
         definition: "Physical-economy output — manufacturing, mining, utilities."
         bands: [[1, null, green], [-1, 1, amber]]
@@ -172,6 +181,7 @@ groups:
         series: [CSUSHPINSA]
         transform: pc1
         suffix: "%"
+        decimals: 1
         source: "S&P via FRED (national index, YoY %, ~2-month lag)"
         definition: "House price growth. Healthy is boring: mid-single digits. Double-digit growth is bubble territory; falling prices strain collateral."
         bands: [[0, 6, green], [6, 10, amber], [-3, 0, amber]]
@@ -238,7 +248,8 @@ groups:
         label: "Gold (USD/oz)"
         kind: stooq
         series: [xauusd]
-        suffix: ""
+        suffix: "$"
+        decimals: 0
         source: "Stooq (xauusd, daily) — unofficial; FRED's LBMA feed was discontinued
                  (no FRED fallback exists for gold — ICE licensing)"
         definition: "The debasement-fear gauge. A sharp spike is capital voting against fiat — a Dalio Stage-5 tell, not a celebration."
@@ -249,7 +260,8 @@ groups:
         label: "Crude oil (WTI)"
         kind: fred
         series: [DCOILWTICO]
-        suffix: ""
+        suffix: "$"
+        decimals: 0
         source: "EIA via FRED (DCOILWTICO, daily)"
         definition: "The input cost that moves headline inflation. Judged on YoY change: spikes are supply shocks, collapses signal demand failure."
         status_on: yoy
@@ -259,7 +271,8 @@ groups:
         label: "S&P 500"
         kind: stooq
         series: ["^spx"]
-        suffix: ""
+        suffix: " pts"
+        decimals: 0
         source: "Stooq (^spx, daily) — unofficial; full history vs FRED's 10-yr window"
         fred_fallback: SP500        # official, but 10-yr trailing window only
         definition: "Broad US equities. Judged on YoY change: drawdowns tighten financial conditions and household wealth."
@@ -270,7 +283,8 @@ groups:
         label: "Nasdaq Composite"
         kind: stooq
         series: ["^ndq"]
-        suffix: ""
+        suffix: " pts"
+        decimals: 0
         source: "Stooq (^ndq, daily) — unofficial"
         fred_fallback: NASDAQCOM    # Nasdaq via FRED, daily since 1971
         definition: "Tech-heavy equities — the risk-appetite end of the equity market."
@@ -281,7 +295,8 @@ groups:
         label: "Bitcoin (USD)"
         kind: stooq
         series: [btcusd]
-        suffix: ""
+        suffix: "$"
+        decimals: 0
         source: "Stooq (btcusd, daily) — unofficial"
         fred_fallback: CBBTCUSD     # Coinbase BTC-USD via FRED, daily since 2014
         definition: "Pure risk-appetite / liquidity gauge (and a debasement hedge to its holders). Deep drawdowns mark liquidity drains."

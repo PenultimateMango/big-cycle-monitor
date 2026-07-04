@@ -54,6 +54,6 @@ jobs:
         run: |
           git config user.name  "bcm-bot"
           git config user.email "actions@github.com"
-          git add data/snapshot.json data/history.csv docs/*.html data/manual/*.csv
+          git add data/snapshot.json data/history.csv data/gdelt_history.csv docs/*.html data/manual/*.csv
           git diff --staged --quiet || git commit -m "chore: refresh $(date -u +%Y-%m-%dT%H:%MZ)"
           git push

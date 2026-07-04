@@ -158,7 +158,20 @@ def backfill(store: Store, country: str = "US", manual_dir=None, verbose: bool =
                                       country=country)
                     subs.append(sub_rows)
                 rows = [(d, v * spec.scale) for d, v in _ffill_mean(subs)]
-            else:                               # gdelt & friends: no history API
+            elif spec.kind == "gdelt":
+                # no history API — replay the committed per-run log instead
+                import csv as _csv
+                gd = root / "data" / "gdelt_history.csv"
+                rows = []
+                if gd.exists():
+                    with open(gd) as f:
+                        for r in _csv.DictReader(f):
+                            if r["country"] == country and r["indicator"] == name:
+                                rows.append((date.fromisoformat(r["date"]), float(r["value"])))
+                if not rows:
+                    status[name] = "skip (accumulates in data/gdelt_history.csv per run)"; continue
+                rows.sort()
+            else:
                 status[name] = "skip (no history endpoint)"; continue
             n = store.insert_many(name, rows, spec.kind.split("_")[0],
                                   ",".join(spec.series), spec.unit, country=country)

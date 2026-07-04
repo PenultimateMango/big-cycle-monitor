@@ -20,7 +20,7 @@ from pathlib import Path
 
 import yaml
 
-from .charts import HISTORY_STYLE, render_chart
+from .charts import HISTORY_STYLE, fmt_val, render_chart
 from .pipeline import _align_ratio
 from .sources.fred import FredSource
 from .sources.stooq import StooqSource
@@ -98,10 +98,8 @@ def evaluate(m: dict, rows: Rows) -> tuple[str, float | None]:
 
 
 # ----------------------------------------------------------------- rendering
-def _fmt(v: float | None, suffix: str) -> str:
-    if v is None:
-        return "—"
-    return f"{v:,.0f}{suffix}" if abs(v) >= 1000 else f"{v:g}{suffix}"
+def _fmt(v: float | None, suffix: str, decimals: int | None = None) -> str:
+    return "—" if v is None else fmt_val(v, decimals, suffix)
 
 
 def build_page(cfg: dict, fetched: dict[str, tuple[dict, Rows, str, float | None]],
@@ -114,12 +112,17 @@ def build_page(cfg: dict, fetched: dict[str, tuple[dict, Rows, str, float | None
         for name, m in group["metrics"].items():
             mcfg, rows, color, jv = fetched[name]
             counts[color] += 1
-            jnote = " YoY" if mcfg.get("status_on") == "yoy" else ""
+            # tiles judged on YoY show the YoY % (1dp); others use their own units
+            if mcfg.get("status_on") == "yoy":
+                tv = "—" if jv is None else f"{jv:+.1f}% YoY"
+            else:
+                tv = _fmt(jv, mcfg.get("suffix", ""), mcfg.get("decimals"))
             tiles += (f'<a class="mh-tile mh-{color}" href="#{name}">'
                       f'<span class="mh-dot"></span><span class="mh-tl">{mcfg["label"]}</span>'
-                      f'<span class="mh-tv">{_fmt(jv, mcfg.get("suffix",""))}{jnote}</span></a>')
+                      f'<span class="mh-tv">{tv}</span></a>')
             chart = render_chart(_trim(rows, mcfg.get("window_years")), mcfg["label"],
-                                 mcfg.get("suffix", ""), None, badge=color, card_id=name)
+                                 mcfg.get("suffix", ""), None, badge=color, card_id=name,
+                                 decimals=mcfg.get("decimals"))
             note = failures.get(name)
             src = (f'<div class="mh-src">{mcfg.get("source","")}'
                    + (f' · <span class="mh-fail">fetch failed: {note}</span>' if note else "")

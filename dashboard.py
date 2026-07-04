@@ -105,8 +105,8 @@ with st.expander("About · what the Big Cycle is and how to read this dashboard"
         st.markdown(f"**{_h}.** {_b}")
 
 c1, c2, c3 = st.columns([1, 1, 2])
-c1.metric("Composite stage", f"{res['composite']:.2f}", help="1 = new order · 6 = civil war/revolution")
-c2.metric("Band", f"{lo:.2f}–{hi:.2f}", f"+{res['widening_pct']:.0f}% vs independent", delta_color="off")
+c1.metric("Composite stage", f"{res['composite']:.1f}", help="1 = new order · 6 = civil war/revolution")
+c2.metric("Band", f"{lo:.1f}–{hi:.1f}", f"+{res['widening_pct']:.0f}% vs independent", delta_color="off")
 c3.markdown(f"<div class='cap'>correlation between cycles widens the band by "
             f"{res['widening_pct']:.0f}% — the anti-double-count adjustment. "
             f"Read the band, not the decimal.</div>", unsafe_allow_html=True)

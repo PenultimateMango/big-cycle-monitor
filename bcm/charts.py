@@ -35,6 +35,16 @@ def _downsample(rows: list[tuple[date, float]]) -> list[tuple[date, float]]:
     return keep
 
 
+def fmt_val(v: float, decimals: int | None = None, suffix: str = "") -> str:
+    """Unit-aware number: decimals from indicator meta (None = smart %.3g),
+    '$' suffix renders as a prefix."""
+    if decimals is None:
+        s = f"{v:,.0f}" if abs(v) >= 1000 else f"{v:.3g}"
+    else:
+        s = f"{v:,.{decimals}f}"
+    return f"${s}" if suffix == "$" else f"{s}{suffix}"
+
+
 def _stage_boundaries(anchors: list) -> list[tuple[float, float]] | None:
     """Invert (value, stage) anchors -> [(boundary_value, upper_stage), ...].
 
@@ -61,7 +71,7 @@ def _stage_boundaries(anchors: list) -> list[tuple[float, float]] | None:
 
 def render_chart(rows: list[tuple[date, float]], label: str, suffix: str = "",
                  anchors: list | None = None, badge: str | None = None,
-                 card_id: str | None = None) -> str:
+                 card_id: str | None = None, decimals: int | None = None) -> str:
     """One indicator's history as a self-contained SVG string. badge is an
     optional stoplight color ('green'|'amber'|'red') shown beside the label."""
     dot = f'<span class="bcm-dot bcm-dot-{badge}"></span>' if badge else ""
@@ -152,12 +162,12 @@ def render_chart(rows: list[tuple[date, float]], label: str, suffix: str = "",
     anchor = "end" if lx > W - 90 else "start"
     tx = lx - 7 if anchor == "end" else lx + 7
     parts.append(f'<text x="{tx:.1f}" y="{ly-6:.1f}" font-size="10" text-anchor="{anchor}" '
-                 f'fill="#e3c98a">{ys[-1]:g}{suffix}</text>')
+                 f'fill="#e3c98a">{fmt_val(ys[-1], decimals, suffix)}</text>')
 
     # ---- axes: y min/max, x first/last year ----
     for v, yy in ((y_hi, PAD_T + 8), (y_lo, H - PAD_B - 2)):
         parts.append(f'<text x="{PAD_L-6}" y="{yy:.1f}" font-size="8.5" text-anchor="end" '
-                     f'fill="#5f6a80">{v:.3g}</text>')
+                     f'fill="#5f6a80">{fmt_val(v, decimals, suffix)}</text>')
     parts.append(f'<text x="{PAD_L}" y="{H-6}" font-size="8.5" fill="#5f6a80">{rows[0][0].year}</text>')
     parts.append(f'<text x="{W-PAD_R}" y="{H-6}" font-size="8.5" text-anchor="end" '
                  f'fill="#5f6a80">{rows[-1][0].year}</text>')
@@ -188,14 +198,16 @@ def render_history_section(histories: dict[str, list], cfg: dict, meta: dict) ->
                 continue
             m = meta.get(name, {})
             cards += render_chart(histories.get(name, []), m.get("label", name),
-                                  m.get("suffix", ""), _anchors_for(cfg, name))
+                                  m.get("suffix", ""), _anchors_for(cfg, name),
+                                  decimals=m.get("decimals"))
             # a derived composite's sub-gauges chart right after it, on the
             # parent's anchors (same 0..1 escalation scale)
             for sub in (ind.get("sub_gauges") or {}):
                 if sub in histories:
                     sm = meta.get(sub, {})
                     cards += render_chart(histories[sub], sm.get("label", sub),
-                                          sm.get("suffix", ""), ind.get("anchors"))
+                                          sm.get("suffix", ""), ind.get("anchors"),
+                                          decimals=sm.get("decimals"))
         blocks += (f'<div class="bcm-hist-cycle"><div class="bcm-hist-h">{cfg[c]["label"]}</div>'
                    f'<div class="bcm-hist-grid">{cards}</div></div>')
     return (f'<div class="bcm-history"><div class="bcm-hist-title">Indicator history'

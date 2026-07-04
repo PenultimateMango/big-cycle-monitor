@@ -5,12 +5,14 @@
 top1_wealth_share:
   label: "Top 1% wealth share"
   suffix: "%"
+  decimals: 0
   definition: "Share of national wealth held by the wealthiest 1%. Dalio treats a widening wealth gap as a primary driver of internal disorder — the resentment that pushes a society from Stage 4 excess toward Stage 5 conflict."
   source: "World Inequality Database (WID.world); Fed Distributional Financial Accounts"
 
 income_gini:
   label: "Income inequality (Gini)"
   suffix: ""
+  decimals: 1
   definition: "How unequally income is spread, from 0 (perfectly equal) to 1 (one person has it all). Complements the wealth gap; entrenched inequality erodes the shared prosperity that holds Stage 3 together."
   source: "U.S. Census Bureau (CPS/ACS); World Bank"
 
@@ -23,6 +25,7 @@ political_polarization:
 institutional_trust:
   label: "Trust in government"
   suffix: "%"
+  decimals: 0
   definition: "Share of the public that trusts the federal government to do what's right. Falling trust weakens a system's ability to make and enforce decisions — a defining symptom of Stage 5."
   source: "Pew Research Center; Gallup"
 
@@ -41,6 +44,7 @@ unrest_events:
 gov_debt_gdp:
   label: "Government debt / GDP"
   suffix: "%"
+  decimals: 0
   definition: "Total public debt as a share of the economy. The headline gauge of how far the long-term debt cycle has run; high and rising levels mark its late, fragile phase."
   source: "FRED / U.S. Treasury (GFDEGDQ188S)"
 
@@ -59,24 +63,28 @@ interest_pct_revenue:
 cb_balance_sheet_gdp:
   label: "Central bank balance sheet / GDP"
   suffix: "%"
+  decimals: 0
   definition: "The Fed's holdings relative to the economy — a proxy for money printing. Sustained expansion signals the monetization phase, where the bank funds deficits directly."
   source: "Federal Reserve (FRED: WALCL) / BEA GDP"
 
 policy_room:
   label: "Policy rate (room to cut)"
   suffix: "%"
+  decimals: 1
   definition: "The nominal policy rate, standing in for how much conventional ammunition the central bank has left. Near-zero means no room, a late-cycle vulnerability; higher means more room to respond."
   source: "Federal Reserve (FRED: DFF)"
 
 foreign_treasury_share:
   label: "Foreign-held debt share"
   suffix: "%"
+  decimals: 0
   definition: "Share of publicly-held federal debt owned by foreign investors. A declining trend signals waning external confidence in the debt — an early warning on the road to reserve-status loss."
   source: "FRED: FDHBFIN / FYGFDPUN (foreign share of debt held by the public)"
 
 reserve_currency_share:
   label: "Reserve currency share"
   suffix: "%"
+  decimals: 0
   definition: "The dollar's share of global central-bank reserves. Reserve status is the debt cycle's ultimate backstop; its slow erosion is the deepest, slowest signal of decline."
   source: "IMF COFER (Currency Composition of Official FX Reserves)"
 
@@ -89,6 +97,7 @@ rival_power_gap:
 military_balance:
   label: "Military spending balance"
   suffix: "%"
+  decimals: 0
   definition: "The top rival's military spending as a share of the leader's. A rising ratio signals a shifting balance of hard power and a higher risk of confrontation."
   source: "SIPRI Military Expenditure Database (via World Bank)"
 
@@ -113,6 +122,7 @@ bloc_alignment:
 media_trust:
   label: "Trust in mass media"
   suffix: "%"
+  decimals: 0
   definition: "Share of Americans with a great deal or fair amount of trust in newspapers, TV, and radio to report the news fully, accurately, and fairly — Gallup's unchanged question since 1972 (72% then, 28% now). Dalio flags the loss of shared truth in public discourse as a hallmark of Stage 5: when large factions assign zero credibility to the information system, disputes stop being resolvable with facts."
   source: "Gallup, annual September poll (news.gallup.com/topic/media.aspx)"
 
