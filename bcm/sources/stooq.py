@@ -30,11 +30,16 @@ class StooqSource(Source):
     def history(self, series_id: str) -> list[tuple[date, float]]:
         r = requests.get(_ENDPOINT, params={"s": series_id, "i": "d"},
                          timeout=self.timeout,
-                         headers={"User-Agent": "big-cycle-monitor"})
+                         headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                "Chrome/126.0 Safari/537.36"})
         r.raise_for_status()
         text = r.text.strip()
-        if not text or text.lower().startswith(("no data", "<html")):
-            raise ValueError(f"stooq returned no data for {series_id}")
+        low = text.lower()
+        if "przekroczony" in low or "limit" in low[:80]:
+            raise ValueError(f"stooq daily-hits limit for this IP ({text[:60]!r})")
+        if not text or low.startswith(("no data", "<html", "<!doctype")):
+            raise ValueError(f"stooq returned no data for {series_id}: {text[:80]!r}")
         rows: list[tuple[date, float]] = []
         for row in csv.DictReader(io.StringIO(text)):
             c = row.get("Close")
@@ -42,7 +47,7 @@ class StooqSource(Source):
                 continue
             rows.append((date.fromisoformat(row["Date"]), float(c)))
         if not rows:
-            raise ValueError(f"no parseable rows from stooq for {series_id}")
+            raise ValueError(f"no parseable rows from stooq for {series_id}; body starts {text[:80]!r}")
         return sorted(rows)
 
     def series(self, series_id: str) -> tuple[date, float]:

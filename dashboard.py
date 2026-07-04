@@ -4,10 +4,11 @@
     pip install streamlit
     streamlit run dashboard.py
 
-Reads whatever is in the store (run `scripts/run.py refresh` first for live data;
-falls back to `demo` seed values otherwise). The sidebar re-weights the three
-gauges and the band width live — so 'is Dalio right?' becomes something you can
-poke at, not take on faith."""
+Two pages (sidebar): the Big Cycle monitor and the Macro Health stoplight grid.
+The Big Cycle store starts empty locally — use the in-app backfill button (or
+`python scripts/run.py backfill`) to load full history; charts appear after.
+The Macro page fetches FRED + Stooq live on load (cached ~1h)."""
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 
 from bcm import scoring
 from bcm.arc import render_arc
+from bcm.charts import HISTORY_STYLE, render_history_section
 from bcm.panels import ABOUT_SECTIONS, STYLE, load_meta, render_panels
 from bcm.seed import seed
 from bcm.store import Store
@@ -32,12 +34,38 @@ st.markdown("""<style>
   .cap{font-family:'IBM Plex Mono',monospace;color:#8a93a6;font-size:12px;letter-spacing:.04em}
 </style>""", unsafe_allow_html=True)
 
+page = st.sidebar.radio("Page", ["Big Cycle", "Macro Health"])
+
 
 @st.cache_resource
 def _base_cfg():
     return scoring.load_config(ROOT / "config" / "thresholds.yaml")
 
 
+# ============================================================ MACRO HEALTH ==
+if page == "Macro Health":
+    st.markdown("# Macro Health")
+    st.markdown("<div class='cap'>28 vitals, each judged red/amber/green against the "
+                "bands in <code>config/macro.yaml</code>. Fetches FRED + Stooq live; "
+                "cached for an hour.</div>", unsafe_allow_html=True)
+
+    if not os.environ.get("FRED_API_KEY"):
+        k = st.text_input("FRED API key (free at fred.stlouisfed.org — FRED metrics "
+                          "show red 'fetch failed' without it; Stooq assets work regardless)",
+                          type="password")
+        if k:
+            os.environ["FRED_API_KEY"] = k
+
+    @st.cache_data(ttl=3600, show_spinner="Fetching ~28 series from FRED and Stooq…")
+    def _macro_html(_key_fingerprint: str) -> str:
+        from bcm.macro import build
+        return build(ROOT / "config" / "macro.yaml", verbose=False)
+
+    html = _macro_html(os.environ.get("FRED_API_KEY", "")[-4:])
+    st.components.v1.html(html, height=5200, scrolling=True)
+    st.stop()
+
+# ============================================================== BIG CYCLE ==
 def _readings(cfg, country):
     store = Store(ROOT / "data" / "bcm.duckdb")
     vals = store.latest_values(country=country)
@@ -99,9 +127,6 @@ st.caption("Click the ⓘ beside any indicator for what it measures and why it m
            "Anchors and correlations are documented judgment, not fitted parameters.")
 
 # ---- indicator history charts ----------------------------------------------
-from bcm.charts import HISTORY_STYLE, render_history_section
-
-
 def _histories(country):
     store = Store(ROOT / "data" / "bcm.duckdb")
     hs = store.all_series(country=country)
@@ -114,8 +139,24 @@ if any(len(v) >= 3 for v in hists.values()):
     hist_html = HISTORY_STYLE + render_history_section(hists, cfg, meta)
     st.components.v1.html(
         f"<div style='background:#0d1420;font-family:sans-serif'>{hist_html}</div>",
-        height=1400, scrolling=True)
+        height=2400, scrolling=True)
 else:
-    st.caption("No time-series history in the store yet — run "
-               "`python scripts/run.py backfill` (needs FRED_API_KEY) to load "
-               "full FRED/World Bank history, and charts appear here.")
+    # Local store is fresh (the CI database is never committed) — offer one-click backfill.
+    st.info("No time-series history in the local store yet — history lives only in CI. "
+            "Load it here once and the charts appear.")
+    k = st.text_input("FRED API key (optional — without it, manual-CSV indicators "
+                      "like media trust and the five wars still chart; FRED/World Bank ones need it)",
+                      type="password", key="bf_key")
+    if st.button("Load full history into local store (backfill)"):
+        if k:
+            os.environ["FRED_API_KEY"] = k
+        from bcm.pipeline import backfill
+        store = Store(ROOT / "data" / "bcm.duckdb")
+        with st.spinner("Backfilling full history…"):
+            status = backfill(store, country=choice, verbose=False)
+        store.close()
+        ok = sum(1 for v in status.values() if v.startswith("ok"))
+        fails = ", ".join(f"{n}" for n, v in status.items() if v.startswith("FAIL"))
+        st.success(f"{ok}/{len(status)} indicators backfilled."
+                   + (f" Failed: {fails}" if fails else ""))
+        st.rerun()

@@ -239,7 +239,8 @@ groups:
         kind: stooq
         series: [xauusd]
         suffix: ""
-        source: "Stooq (xauusd, daily) — unofficial; FRED's LBMA feed was discontinued"
+        source: "Stooq (xauusd, daily) — unofficial; FRED's LBMA feed was discontinued
+                 (no FRED fallback exists for gold — ICE licensing)"
         definition: "The debasement-fear gauge. A sharp spike is capital voting against fiat — a Dalio Stage-5 tell, not a celebration."
         status_on: yoy
         window_years: 25
@@ -260,6 +261,7 @@ groups:
         series: ["^spx"]
         suffix: ""
         source: "Stooq (^spx, daily) — unofficial; full history vs FRED's 10-yr window"
+        fred_fallback: SP500        # official, but 10-yr trailing window only
         definition: "Broad US equities. Judged on YoY change: drawdowns tighten financial conditions and household wealth."
         status_on: yoy
         window_years: 25
@@ -270,6 +272,7 @@ groups:
         series: ["^ndq"]
         suffix: ""
         source: "Stooq (^ndq, daily) — unofficial"
+        fred_fallback: NASDAQCOM    # Nasdaq via FRED, daily since 1971
         definition: "Tech-heavy equities — the risk-appetite end of the equity market."
         status_on: yoy
         window_years: 25
@@ -280,6 +283,7 @@ groups:
         series: [btcusd]
         suffix: ""
         source: "Stooq (btcusd, daily) — unofficial"
+        fred_fallback: CBBTCUSD     # Coinbase BTC-USD via FRED, daily since 2014
         definition: "Pure risk-appetite / liquidity gauge (and a debasement hedge to its holders). Deep drawdowns mark liquidity drains."
         status_on: yoy
         window_years: 12

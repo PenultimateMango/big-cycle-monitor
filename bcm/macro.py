@@ -185,8 +185,18 @@ def build(config_path: str | Path = "config/macro.yaml",
                 rows = fetch_metric(m, fred, stooq)
                 color, jv = evaluate(m, rows)
             except Exception as e:
-                rows, (color, jv) = [], ("red", None)
-                failures[name] = f"{type(e).__name__}: {e}"
+                fb = m.get("fred_fallback")
+                if fb:
+                    try:
+                        rows = fred.history(fb)
+                        color, jv = evaluate(m, rows)
+                        failures[name] = f"Stooq unavailable — served from FRED {fb}"
+                    except Exception as e2:
+                        rows, (color, jv) = [], ("red", None)
+                        failures[name] = f"{type(e).__name__}: {e} | fallback {fb}: {e2}"
+                else:
+                    rows, (color, jv) = [], ("red", None)
+                    failures[name] = f"{type(e).__name__}: {e}"
             fetched[name] = (m, rows, color, jv)
             if verbose:
                 tail = failures.get(name, f"{color}  ({jv if jv is None else round(jv,2)})")
