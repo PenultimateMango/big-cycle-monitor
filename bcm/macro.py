@@ -15,6 +15,7 @@ Design decisions:
 from __future__ import annotations
 
 import bisect
+import html as _html
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -124,6 +125,9 @@ def build_page(cfg: dict, fetched: dict[str, tuple[dict, Rows, str, float | None
                                  mcfg.get("suffix", ""), None, badge=color, card_id=name,
                                  decimals=mcfg.get("decimals"))
             note = failures.get(name)
+            if note:  # escape HTML; also break Liquid tokens so a raw error
+                # body can never trip Jekyll even without .nojekyll
+                note = _html.escape(note).replace("{%", "{ %").replace("{{", "{ {")
             src = (f'<div class="mh-src">{mcfg.get("source","")}'
                    + (f' · <span class="mh-fail">fetch failed: {note}</span>' if note else "")
                    + f'</div><div class="mh-def">{mcfg.get("definition","")}</div>')
@@ -180,28 +184,37 @@ def build(config_path: str | Path = "config/macro.yaml",
     Per-metric failures render as an empty chart + red light + failure note —
     one dead source never kills the page."""
     cfg = load_macro_config(config_path)
-    fred, stooq = fred or FredSource(), stooq or StooqSource()
+    fred, stooq = fred or FredSource(), stooq or StooqSource(timeout=8)
     fetched, failures = {}, {}
-    for group in cfg["groups"]:
-        for name, m in group["metrics"].items():
-            try:
-                rows = fetch_metric(m, fred, stooq)
-                color, jv = evaluate(m, rows)
-            except Exception as e:
-                fb = m.get("fred_fallback")
-                if fb:
-                    try:
-                        rows = fred.history(fb)
-                        color, jv = evaluate(m, rows)
-                        failures[name] = f"Stooq unavailable — served from FRED {fb}"
-                    except Exception as e2:
-                        rows, (color, jv) = [], ("red", None)
-                        failures[name] = f"{type(e).__name__}: {e} | fallback {fb}: {e2}"
-                else:
-                    rows, (color, jv) = [], ("red", None)
-                    failures[name] = f"{type(e).__name__}: {e}"
-            fetched[name] = (m, rows, color, jv)
-            if verbose:
-                tail = failures.get(name, f"{color}  ({jv if jv is None else round(jv,2)})")
-                print(f"  {name:<22} {len(rows):>6} obs   {tail}")
+
+    def _one(name, mm):
+        """(rows, color, judged_value, failure_note|None) — never raises."""
+        try:
+            rows = fetch_metric(mm, fred, stooq)
+            c, jv = evaluate(mm, rows)
+            return rows, c, jv, None
+        except Exception as e:
+            fb = mm.get("fred_fallback")
+            if fb:
+                try:
+                    rows = fred.history(fb)
+                    c, jv = evaluate(mm, rows)
+                    return rows, c, jv, f"Stooq unavailable — served from FRED {fb}"
+                except Exception as e2:
+                    return [], "red", None, f"{type(e).__name__}: {e} | fallback {fb}: {e2}"
+            return [], "red", None, f"{type(e).__name__}: {e}"
+
+    # parallel fetch: wall time ~= slowest single request instead of the sum of
+    # 28 sequential ones (a hanging Stooq made the Streamlit page look frozen)
+    from concurrent.futures import ThreadPoolExecutor
+    items = [(name, mm) for g in cfg["groups"] for name, mm in g["metrics"].items()]
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(lambda nm: _one(*nm), items))
+    for (name, mm), (rows, color, jv, note) in zip(items, results):
+        if note:
+            failures[name] = note
+        fetched[name] = (mm, rows, color, jv)
+        if verbose:
+            tail = failures.get(name, f"{color}  ({jv if jv is None else round(jv,2)})")
+            print(f"  {name:<22} {len(rows):>6} obs   {tail}")
     return build_page(cfg, fetched, failures)

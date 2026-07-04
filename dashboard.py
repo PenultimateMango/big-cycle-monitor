@@ -26,6 +26,18 @@ from bcm.store import Store
 
 st.set_page_config(page_title="Big Cycle Monitor", layout="wide")
 
+
+def show_fragment(content: str, height: int) -> None:
+    """Render an HTML fragment. st.html (Streamlit >=1.33) sizes to content and
+    avoids the components.v1.html deprecation; our fragments are script-free so
+    sanitization is a no-op. Older versions fall back to the fixed iframe."""
+    if hasattr(st, "html"):
+        st.html(content)
+    else:
+        st.components.v1.html(content, height=height, scrolling=True)
+
+st.markdown('<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;1,400&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet">',
+            unsafe_allow_html=True)
 st.markdown("""<style>
   .stApp{background:#0d1420;color:#e8e6df}
   .block-container{max-width:1120px;padding-top:1.4rem}
@@ -112,15 +124,12 @@ c3.markdown(f"<div class='cap'>correlation between cycles widens the band by "
             f"Read the band, not the decimal.</div>", unsafe_allow_html=True)
 
 # ---- the arc --------------------------------------------------------------
-st.components.v1.html(
-    f"<div style='background:#0d1420'>{render_arc(res, cfg)}</div>", height=340)
+show_fragment(f"<div style='background:#0d1420'>{render_arc(res, cfg)}</div>", 340)
 
 # ---- gauge panels: labeled Value/Stage columns + expandable definitions ----
 meta = load_meta(ROOT / "config" / "indicator_meta.yaml")
 panels_html = STYLE + render_panels(res, readings, cfg, meta)
-st.components.v1.html(
-    f"<div style='background:#0d1420;font-family:sans-serif'>{panels_html}</div>",
-    height=560, scrolling=True)
+show_fragment(f"<div style='background:#0d1420;font-family:sans-serif'>{panels_html}</div>", 560)
 
 st.caption("Click the ⓘ beside any indicator for what it measures and why it matters. "
            "Values illustrative until `refresh` pulls live sources. "
@@ -137,9 +146,7 @@ def _histories(country):
 hists = _histories(choice)
 if any(len(v) >= 3 for v in hists.values()):
     hist_html = HISTORY_STYLE + render_history_section(hists, cfg, meta)
-    st.components.v1.html(
-        f"<div style='background:#0d1420;font-family:sans-serif'>{hist_html}</div>",
-        height=2400, scrolling=True)
+    show_fragment(f"<div style='background:#0d1420;font-family:sans-serif'>{hist_html}</div>", 2400)
 else:
     # Local store is fresh (the CI database is never committed) — offer one-click backfill.
     st.info("No time-series history in the local store yet — history lives only in CI. "
