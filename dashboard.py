@@ -28,13 +28,12 @@ st.set_page_config(page_title="Big Cycle Monitor", layout="wide")
 
 
 def show_fragment(content: str, height: int) -> None:
-    """Render an HTML fragment. st.html (Streamlit >=1.33) sizes to content and
-    avoids the components.v1.html deprecation; our fragments are script-free so
-    sanitization is a no-op. Older versions fall back to the fixed iframe."""
-    if hasattr(st, "html"):
-        st.html(content)
-    else:
-        st.components.v1.html(content, height=height, scrolling=True)
+    """Render an HTML fragment in an iframe, verbatim. st.html was tried here
+    (v9) and rejected: its DOMPurify pass strips SVG paint refs and drawing
+    primitives (polyline/polygon), silently blanking the arc and every chart.
+    Iframes render exactly what we generate; the components.v1.html deprecation
+    warning is cosmetic and acceptable until Streamlit ships an iframe API."""
+    st.components.v1.html(content, height=height, scrolling=True)
 
 st.markdown('<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;1,400&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet">',
             unsafe_allow_html=True)
@@ -45,6 +44,20 @@ st.markdown("""<style>
   [data-testid="stMetricValue"]{font-family:Spectral,serif;color:#e8e6df}
   .cap{font-family:'IBM Plex Mono',monospace;color:#8a93a6;font-size:12px;letter-spacing:.04em}
 </style>""", unsafe_allow_html=True)
+
+def _load_fred_key() -> None:
+    """FRED key without pasting: .streamlit/secrets.toml (gitignored) or the
+    FRED_API_KEY environment variable. The in-app inputs remain as fallback."""
+    if os.environ.get("FRED_API_KEY"):
+        return
+    try:
+        if "FRED_API_KEY" in st.secrets:
+            os.environ["FRED_API_KEY"] = st.secrets["FRED_API_KEY"]
+    except Exception:
+        pass                                  # no secrets file -> inputs remain
+
+
+_load_fred_key()
 
 page = st.sidebar.radio("Page", ["Big Cycle", "Macro Health"])
 
@@ -124,7 +137,8 @@ c3.markdown(f"<div class='cap'>correlation between cycles widens the band by "
             f"Read the band, not the decimal.</div>", unsafe_allow_html=True)
 
 # ---- the arc --------------------------------------------------------------
-show_fragment(f"<div style='background:#0d1420'>{render_arc(res, cfg)}</div>", 340)
+st.components.v1.html(
+    f"<div style='background:#0d1420'>{render_arc(res, cfg)}</div>", height=340)
 
 # ---- gauge panels: labeled Value/Stage columns + expandable definitions ----
 meta = load_meta(ROOT / "config" / "indicator_meta.yaml")

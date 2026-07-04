@@ -91,6 +91,7 @@ def render_arc(result: dict, cfg: dict) -> str:
   <rect x="{xlo:.1f}" y="20" width="{max(xhi-xlo,2):.1f}" height="252" fill="rgba(232,230,223,.06)"/>
   <line x1="{xlo:.1f}" y1="20" x2="{xlo:.1f}" y2="272" stroke="rgba(232,230,223,.18)" stroke-dasharray="2 3"/>
   <line x1="{xhi:.1f}" y1="20" x2="{xhi:.1f}" y2="272" stroke="rgba(232,230,223,.18)" stroke-dasharray="2 3"/>
+  <path d="{_curve_path()}" fill="none" stroke="#c98a2e" stroke-width="3.5" stroke-linecap="round"/>
   <path d="{_curve_path()}" fill="none" stroke="url(#band)" stroke-width="3.5" stroke-linecap="round"/>
   {tick_svg}
   <g filter="url(#glow)">

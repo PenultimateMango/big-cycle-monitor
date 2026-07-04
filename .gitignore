@@ -10,3 +10,5 @@ venv/
 .streamlit/
 preview_charts.html
 live_dashboard.html
+
+.streamlit/secrets.toml
