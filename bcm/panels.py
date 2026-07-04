@@ -162,7 +162,8 @@ def dashboard_page(result: dict, readings: dict, cfg: dict, meta: dict,
 </style></head><body><div class="wrap">
   <h1>Big Cycle Monitor — {name}</h1>
   <div class="cap">composite <span class="big"><span>{result['composite']:.2f}</span></span>
-       · band [{lo:.2f}, {hi:.2f}] · correlation widens the band by {result['widening_pct']:.0f}%</div>
+       · band [{lo:.2f}, {hi:.2f}] · correlation widens the band by {result['widening_pct']:.0f}%
+       · <a href="macro.html" style="color:#c6a15b;text-decoration:none">Macro Health →</a></div>
   {about_html()}
   <div class="arc-wrap">{arc}</div>
   {panels}

@@ -1,0 +1,286 @@
+# =============================================================================
+# macro.yaml · Macro Health page — metrics, sources, and stoplight bands
+# -----------------------------------------------------------------------------
+# Each metric: where it comes from, what transform to apply, and the explicit
+# green/amber judgment bands. Anything not matching a band is RED. Bands are
+# DOCUMENTED JUDGMENT (like the Big Cycle anchors) — edit them, don't trust them.
+#
+# kind:       fred | fred_ratio | stooq
+# transform:  level (default) | pc1 (FRED server-side YoY %) | yoy (computed)
+# status_on:  which value the stoplight judges — the transformed series value
+#             (default) or 'yoy' of it (used for asset LEVELS, where the chart
+#             shows price but health judgment only makes sense on the change)
+# bands:      ordered [lo, hi, color] rules; null = open end; first match wins;
+#             no match = red
+# window_years: trim the chart to the trailing N years (long asset histories
+#             otherwise flatten everything before 2000 into the x-axis)
+# =============================================================================
+
+groups:
+
+  - label: Inflation & wages
+    metrics:
+      cpi_headline:
+        label: "CPI inflation (headline)"
+        kind: fred
+        series: [CPIAUCSL]
+        transform: pc1
+        suffix: "%"
+        source: "BLS via FRED (CPIAUCSL, YoY %)"
+        definition: "All-items consumer price inflation, year over year."
+        bands: [[1, 3, green], [3, 4, amber], [0, 1, amber]]
+      cpi_core:
+        label: "Core CPI (ex food & energy)"
+        kind: fred
+        series: [CPILFESL]
+        transform: pc1
+        suffix: "%"
+        source: "BLS via FRED (CPILFESL, YoY %)"
+        definition: "Underlying inflation trend with volatile food and energy stripped out."
+        bands: [[1.5, 3, green], [3, 4, amber], [0.5, 1.5, amber]]
+      pce_core:
+        label: "Core PCE (Fed's target)"
+        kind: fred
+        series: [PCEPILFE]
+        transform: pc1
+        suffix: "%"
+        source: "BEA via FRED (PCEPILFE, YoY %)"
+        definition: "The Fed's actual 2% target variable. The CPI–PCE gap is itself informative."
+        bands: [[1.5, 2.5, green], [2.5, 3.5, amber], [0.5, 1.5, amber]]
+      wage_nominal:
+        label: "Nominal wage growth"
+        kind: fred
+        series: [CES0500000003]
+        transform: pc1
+        suffix: "%"
+        source: "BLS via FRED (avg hourly earnings, YoY %)"
+        definition: "Average hourly earnings growth, all private employees. Too cold starves demand; too hot feeds the wage-price spiral."
+        bands: [[3, 5, green], [2, 3, amber], [5, 6, amber]]
+      wage_real:
+        label: "Real wage growth"
+        kind: fred_ratio
+        series: [CES0500000003, CPIAUCSL]
+        transform: yoy
+        suffix: "%"
+        source: "computed — AHE deflated by CPI, YoY %"
+        definition: "Whether paychecks beat inflation. The metric that decides how the economy FEELS."
+        bands: [[0.5, null, green], [-0.5, 0.5, amber]]
+      productivity:
+        label: "Productivity growth"
+        kind: fred
+        series: [OPHNFB]
+        transform: pc1
+        suffix: "%"
+        source: "BLS via FRED (nonfarm output/hour, YoY %)"
+        definition: "Output per hour — the only non-inflationary source of rising living standards, and Dalio's favorite long-run force."
+        bands: [[1.5, null, green], [0, 1.5, amber]]
+
+  - label: Labor
+    metrics:
+      unemployment:
+        label: "Unemployment rate"
+        kind: fred
+        series: [UNRATE]
+        suffix: "%"
+        source: "BLS via FRED (UNRATE)"
+        definition: "Headline U-3 unemployment."
+        bands: [[null, 4.5, green], [4.5, 5.5, amber]]
+      claims:
+        label: "Initial jobless claims"
+        kind: fred
+        series: [ICSA]
+        suffix: ""
+        source: "DOL via FRED (ICSA, weekly)"
+        definition: "New unemployment filings — the timeliest recession canary on this page."
+        window_years: 20
+        bands: [[null, 250000, green], [250000, 350000, amber]]
+      job_openings:
+        label: "Job openings (JOLTS)"
+        kind: fred
+        series: [JTSJOL]
+        suffix: ""
+        source: "BLS JOLTS via FRED (JTSJOL)"
+        definition: "Unfilled positions — labor demand in levels."
+        bands: [[8000, null, green], [6000, 8000, amber]]
+      sahm:
+        label: "Sahm rule indicator"
+        kind: fred
+        series: [SAHMREALTIME]
+        suffix: ""
+        source: "St. Louis Fed via FRED (SAHMREALTIME)"
+        definition: "Recession trigger: fires at 0.50 when the 3-month average unemployment rate rises half a point off its 12-month low. Near-perfect historical record."
+        bands: [[null, 0.2, green], [0.2, 0.5, amber]]
+
+  - label: Growth & activity
+    metrics:
+      gdp_growth:
+        label: "Real GDP growth (SAAR)"
+        kind: fred
+        series: [A191RL1Q225SBEA]
+        suffix: "%"
+        source: "BEA via FRED (quarterly, annualized)"
+        definition: "The headline growth number."
+        bands: [[1.5, null, green], [0, 1.5, amber]]
+      industrial_production:
+        label: "Industrial production"
+        kind: fred
+        series: [INDPRO]
+        transform: pc1
+        suffix: "%"
+        source: "Federal Reserve via FRED (INDPRO, YoY %)"
+        definition: "Physical-economy output — manufacturing, mining, utilities."
+        bands: [[1, null, green], [-1, 1, amber]]
+      retail_sales:
+        label: "Retail sales"
+        kind: fred
+        series: [RSAFS]
+        transform: pc1
+        suffix: "%"
+        source: "Census via FRED (RSAFS, YoY %, nominal)"
+        definition: "Consumer spending, NOMINAL — read against CPI: 4% sales with 4% inflation is zero real growth."
+        bands: [[3, null, green], [0, 3, amber]]
+      sentiment:
+        label: "Consumer sentiment"
+        kind: fred
+        series: [UMCSENT]
+        suffix: ""
+        source: "U. Michigan via FRED (UMCSENT) — verify recency; redistribution was restricted"
+        definition: "How households say they feel — leads spending turns."
+        bands: [[85, null, green], [65, 85, amber]]
+
+  - label: Housing
+    metrics:
+      housing_starts:
+        label: "Housing starts"
+        kind: fred
+        series: [HOUST]
+        suffix: "k"
+        source: "Census/HUD via FRED (HOUST, thousands SAAR)"
+        definition: "New residential construction begun — the classic rate-sensitive leading sector."
+        bands: [[1400, null, green], [1100, 1400, amber]]
+      permits:
+        label: "Building permits"
+        kind: fred
+        series: [PERMIT]
+        suffix: "k"
+        source: "Census via FRED (PERMIT, thousands SAAR)"
+        definition: "Permits lead starts — the earlier housing signal."
+        bands: [[1350, null, green], [1050, 1350, amber]]
+      home_prices:
+        label: "Home prices (Case-Shiller)"
+        kind: fred
+        series: [CSUSHPINSA]
+        transform: pc1
+        suffix: "%"
+        source: "S&P via FRED (national index, YoY %, ~2-month lag)"
+        definition: "House price growth. Healthy is boring: mid-single digits. Double-digit growth is bubble territory; falling prices strain collateral."
+        bands: [[0, 6, green], [6, 10, amber], [-3, 0, amber]]
+      mortgage_rate:
+        label: "30-yr mortgage rate"
+        kind: fred
+        series: [MORTGAGE30US]
+        suffix: "%"
+        source: "Freddie Mac via FRED (weekly)"
+        definition: "The affordability chokepoint for the whole housing complex."
+        bands: [[null, 5.5, green], [5.5, 7, amber]]
+
+  - label: Rates & credit
+    metrics:
+      yield_10y:
+        label: "10-yr Treasury yield"
+        kind: fred
+        series: [DGS10]
+        suffix: "%"
+        source: "US Treasury via FRED (DGS10, daily)"
+        definition: "The economy's benchmark discount rate. (Yields, not prices — they move inversely; yields are what official sources publish.)"
+        window_years: 40
+        bands: [[2, 4.5, green], [4.5, 5.5, amber], [1, 2, amber]]
+      yield_2y:
+        label: "2-yr Treasury yield"
+        kind: fred
+        series: [DGS2]
+        suffix: "%"
+        source: "US Treasury via FRED (DGS2, daily)"
+        definition: "The market's read on the Fed path over the next two years."
+        window_years: 40
+        bands: [[1.5, 4.5, green], [4.5, 5.5, amber], [0.5, 1.5, amber]]
+      curve_spread:
+        label: "Yield curve (10y − 2y)"
+        kind: fred
+        series: [T10Y2Y]
+        suffix: "pp"
+        source: "FRED computed (T10Y2Y, daily)"
+        definition: "The recession signal: inversion (below zero) has preceded every US recession in fifty years, with a 6–24 month lead."
+        window_years: 40
+        bands: [[0.5, null, green], [0, 0.5, amber]]
+      hy_spread:
+        label: "High-yield credit spread"
+        kind: fred
+        series: [BAMLH0A0HYM2]
+        suffix: "%"
+        source: "ICE BofA via FRED (HY OAS, daily)"
+        definition: "What junk borrowers pay over Treasuries — the market's real-time stress gauge. Blows out fast when credit cracks."
+        bands: [[null, 4, green], [4, 6, amber]]
+      nfci:
+        label: "Financial conditions (NFCI)"
+        kind: fred
+        series: [NFCI]
+        suffix: ""
+        source: "Chicago Fed via FRED (weekly)"
+        definition: "One index summarizing the whole credit/leverage/risk complex. Zero = average; positive = tighter than normal."
+        bands: [[null, 0, green], [0, 0.5, amber]]
+
+  - label: Asset prices
+    # Charts show the LEVEL; the stoplight judges the YoY CHANGE — a price level
+    # has no health meaning, but a spike or drawdown does.
+    metrics:
+      gold:
+        label: "Gold (USD/oz)"
+        kind: stooq
+        series: [xauusd]
+        suffix: ""
+        source: "Stooq (xauusd, daily) — unofficial; FRED's LBMA feed was discontinued"
+        definition: "The debasement-fear gauge. A sharp spike is capital voting against fiat — a Dalio Stage-5 tell, not a celebration."
+        status_on: yoy
+        window_years: 25
+        bands: [[null, 15, green], [15, 30, amber]]
+      oil_wti:
+        label: "Crude oil (WTI)"
+        kind: fred
+        series: [DCOILWTICO]
+        suffix: ""
+        source: "EIA via FRED (DCOILWTICO, daily)"
+        definition: "The input cost that moves headline inflation. Judged on YoY change: spikes are supply shocks, collapses signal demand failure."
+        status_on: yoy
+        window_years: 25
+        bands: [[-20, 30, green], [30, 60, amber], [-35, -20, amber]]
+      sp500:
+        label: "S&P 500"
+        kind: stooq
+        series: ["^spx"]
+        suffix: ""
+        source: "Stooq (^spx, daily) — unofficial; full history vs FRED's 10-yr window"
+        definition: "Broad US equities. Judged on YoY change: drawdowns tighten financial conditions and household wealth."
+        status_on: yoy
+        window_years: 25
+        bands: [[0, null, green], [-10, 0, amber]]
+      nasdaq:
+        label: "Nasdaq Composite"
+        kind: stooq
+        series: ["^ndq"]
+        suffix: ""
+        source: "Stooq (^ndq, daily) — unofficial"
+        definition: "Tech-heavy equities — the risk-appetite end of the equity market."
+        status_on: yoy
+        window_years: 25
+        bands: [[0, null, green], [-15, 0, amber]]
+      bitcoin:
+        label: "Bitcoin (USD)"
+        kind: stooq
+        series: [btcusd]
+        suffix: ""
+        source: "Stooq (btcusd, daily) — unofficial"
+        definition: "Pure risk-appetite / liquidity gauge (and a debasement hedge to its holders). Deep drawdowns mark liquidity drains."
+        status_on: yoy
+        window_years: 12
+        bands: [[0, null, green], [-30, 0, amber]]

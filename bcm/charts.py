@@ -60,11 +60,15 @@ def _stage_boundaries(anchors: list) -> list[tuple[float, float]] | None:
 
 
 def render_chart(rows: list[tuple[date, float]], label: str, suffix: str = "",
-                 anchors: list | None = None) -> str:
-    """One indicator's history as a self-contained SVG string."""
+                 anchors: list | None = None, badge: str | None = None,
+                 card_id: str | None = None) -> str:
+    """One indicator's history as a self-contained SVG string. badge is an
+    optional stoplight color ('green'|'amber'|'red') shown beside the label."""
+    dot = f'<span class="bcm-dot bcm-dot-{badge}"></span>' if badge else ""
+    idattr = f' id="{card_id}"' if card_id else ""
     rows = sorted(rows, key=lambda r: r[0])
     if len(rows) < 3:
-        return (f'<div class="bcm-chart bcm-chart-empty"><div class="bcm-ch-h">{label}</div>'
+        return (f'<div class="bcm-chart bcm-chart-empty"{idattr}><div class="bcm-ch-h">{dot}{label}</div>'
                 f'<div class="bcm-ch-note">history builds as refreshes and manual '
                 f'rows accumulate ({len(rows)} point{"s" if len(rows) != 1 else ""} so far)</div></div>')
     rows = _downsample(rows)
@@ -117,6 +121,23 @@ def render_chart(rows: list[tuple[date, float]], label: str, suffix: str = "",
                 parts.append(f'<text x="{W-PAD_R+4}" y="{yy+3:.1f}" font-size="8.5" '
                              f'fill="#5f6a80">S{lab_s}</text>')
 
+    # ---- interior year ticks: pick a step so ~4-6 labels fit, gridline each ----
+    span_years = max((x1 - x0) / 365.25, 0.01)
+    step = next((s for s in (1, 2, 5, 10, 20, 25, 50, 100) if span_years / s <= 6.5), 100)
+    y_first = rows[0][0].year + (1 if rows[0][0].month > 1 or rows[0][0].day > 1 else 0)
+    first_tick = ((y_first + step - 1) // step) * step
+    for yr in range(first_tick, rows[-1][0].year + 1, step):
+        xo = date(yr, 1, 1).toordinal()
+        if not (x0 < xo <= x1):
+            continue
+        px = X(xo)
+        if px - PAD_L < 34 or (W - PAD_R) - px < 34:   # don't collide with edge labels
+            continue
+        parts.append(f'<line x1="{px:.1f}" x2="{px:.1f}" y1="{PAD_T}" y2="{H-PAD_B}" '
+                     f'stroke="rgba(232,230,223,.05)" stroke-width="1"/>')
+        parts.append(f'<text x="{px:.1f}" y="{H-6}" font-size="8.5" text-anchor="middle" '
+                     f'fill="#5f6a80">{yr}</text>')
+
     # ---- line + soft area fill ----
     pth = " ".join(f"{X(x):.1f},{Y(v):.1f}" for x, v in zip(xs, ys))
     base = Y(y_lo)
@@ -142,7 +163,7 @@ def render_chart(rows: list[tuple[date, float]], label: str, suffix: str = "",
                  f'fill="#5f6a80">{rows[-1][0].year}</text>')
     parts.append("</svg>")
     svg = "".join(parts)
-    return (f'<div class="bcm-chart"><div class="bcm-ch-h">{label}'
+    return (f'<div class="bcm-chart"{idattr}><div class="bcm-ch-h">{dot}{label}'
             f'<span class="bcm-ch-n">{len(rows)} obs · {rows[0][0].year}–{rows[-1][0].year}</span>'
             f'</div>{svg}</div>')
 
@@ -199,4 +220,8 @@ HISTORY_STYLE = """<style>
   .bcm-chart-empty{min-height:70px}
   .bcm-ch-note{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5f6a80;
                padding:16px 0 12px;line-height:1.5}
+  .bcm-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:baseline}
+  .bcm-dot-green{background:#5da364;box-shadow:0 0 6px rgba(93,163,100,.5)}
+  .bcm-dot-amber{background:#d9a94b;box-shadow:0 0 6px rgba(217,169,75,.5)}
+  .bcm-dot-red{background:#c4553b;box-shadow:0 0 6px rgba(196,85,59,.6)}
 </style>"""

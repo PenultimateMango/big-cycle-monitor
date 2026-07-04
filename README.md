@@ -162,3 +162,25 @@ Ratio indicators are backfilled **date-aligned**: each numerator observation is
 paired with the nearest denominator observation (≤400 days), which handles the
 quarterly-numerator / annual-denominator cadence of `foreign_treasury_share`
 properly across the whole series.
+
+## Macro Health page (docs/macro.html)
+
+A second page of core economic vitals — inflation (headline/core CPI, core
+PCE), wages (nominal + computed real), productivity, labor (unemployment,
+claims, JOLTS, Sahm rule), growth (GDP, industrial production, retail sales,
+sentiment), housing (starts, permits, Case-Shiller, mortgage rate), rates &
+credit (2y/10y, curve spread, HY OAS, NFCI), and asset prices (gold, WTI,
+S&P 500, Nasdaq, Bitcoin).
+
+Every metric gets a red/amber/green stoplight judged against explicit bands in
+`config/macro.yaml` — documented judgment, same philosophy as the anchors — and
+a heat-map strip at the top shows all 28 lights at once. Asset stoplights judge
+YoY CHANGE while their charts show the level, since a price level has no health
+meaning but a spike or drawdown does.
+
+Sources are official (BLS/BEA/Census/Treasury/Fed via FRED) except gold, the
+equity indices, and Bitcoin, which come from Stooq (unofficial, free, full
+history — labeled as such on the page). The page needs no database: the
+workflow's `Build Macro Health page` step fetches live and renders static HTML
+each refresh. Build locally with `python scripts/macro_page.py` (needs
+FRED_API_KEY).

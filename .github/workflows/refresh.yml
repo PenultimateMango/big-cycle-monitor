@@ -44,6 +44,12 @@ jobs:
       - name: Write snapshot, history, and rendered arc
         run: python scripts/snapshot.py
 
+      - name: Build Macro Health page
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/macro_page.py || echo "macro page build failed — keeping previous"
+
+
       - name: Commit refreshed artifacts
         run: |
           git config user.name  "bcm-bot"
