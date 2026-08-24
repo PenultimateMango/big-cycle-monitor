@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-17T07:05:44Z",
+  "as_of": "2026-08-24T07:07:53Z",
   "country": "US",
   "composite": 4.611,
   "band": [
@@ -9,37 +9,37 @@
   "widening_pct": 37.6,
   "gauges": {
     "internal_order": 4.936,
-    "debt_money": 4.552,
+    "debt_money": 4.551,
     "external_order": 4.173
   },
   "sigmas": {
     "internal_order": 0.861,
-    "debt_money": 0.927,
+    "debt_money": 0.928,
     "external_order": 0.55
   },
   "readings": {
+    "cb_balance_sheet_gdp": 20.7718,
+    "political_polarization": 0.9,
+    "rival_power_gap": 0.12,
     "institutional_trust": 20.0,
     "media_trust": 28.0,
     "populist_vote_share": 35.0,
     "technology_war": 0.8,
-    "cb_balance_sheet_gdp": 20.8157,
-    "military_war": 0.35,
     "reserve_currency_share": 57.0,
     "trade_war": 0.7,
-    "unrest_events": 95.729,
     "conflict_intensity": 73.862,
     "foreign_treasury_share": 29.4737,
     "military_balance": 31.4505,
+    "geopolitical_war": 0.7,
+    "gov_debt_gdp": 122.5939,
+    "unrest_events": 95.729,
+    "bloc_alignment": 0.6,
+    "military_war": 0.35,
+    "five_wars_composite": 0.63,
     "income_gini": 0.418,
     "interest_pct_revenue": 34.2081,
     "top1_wealth_share": 31.6,
     "total_nonfin_debt_gdp": 255.0,
-    "five_wars_composite": 0.63,
-    "geopolitical_war": 0.7,
-    "gov_debt_gdp": 122.5939,
-    "bloc_alignment": 0.6,
-    "political_polarization": 0.9,
-    "rival_power_gap": 0.12,
     "capital_war": 0.6,
     "policy_room": 3.63
   }
